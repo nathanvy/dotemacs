@@ -1,0 +1,178 @@
+#+TITILE: My Emacs configuration
+#+AUTHOR: Nathan Van Ymeren
+#+STARTUP: showeverything
+#+PROPERTY: header-args :tangle yes
+# the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
+
+* Configuration
+Caveat:  This config is targeted at macOS, using the railwaycat fork of emacs.  Your mileage may vary if you adapt this for linux, etc.
+** About this file
+This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.
+
+# note that typing "<s" followed by TAB will insert a new src block
+** Miscellaneous setup options and fixes
+I don't often use Customize but I do like to have my Custom options in their own tidy file.
+#+BEGIN_SRC emacs-lisp
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file)
+#+END_SRC
+
+Dear emacs, stop littering.
+#+BEGIN_SRC emacs-lisp
+  (setq backup-directory-alist `(("." . "~/.emacs.d/saves")))
+#+END_SRC
+
+** Package management
+My understanding is that this is required before we do any package configuration whatsoever.
+#+BEGIN_SRC emacs-lisp
+  (require 'package)
+#+END_SRC
+
+Now set the package archives.  I use MELPA as well as the Org-specific repository.  
+#+BEGIN_SRC emacs-lisp
+  (setq package-archives '(("MELPA" . "https://melpa.org/packages/")
+			   ("GNU" . "https://elpa.gnu.org/packages/")
+			   ("org" . "http://orgmode.org/elpa/")))
+  (package-initialize)
+#+END_SRC
+
+I also like "use-package" so we'll require that.
+#+BEGIN_SRC emacs-lisp
+  (require 'use-package)
+#+END_SRC
+
+** Visual configuration
+Emacs is actually quite ugly by default so let's address that.
+#+BEGIN_SRC emacs-lisp
+  (column-number-mode t)
+  (tool-bar-mode -1)
+  (scroll-bar-mode -1)
+#+END_SRC
+
+Chris Kempson came up with a very carefully-chosen set of syntax highlighting colours that he calls Base16.
+https://github.com/belak/base16-emacs
+#+BEGIN_SRC emacs-lisp
+  (use-package base16-theme
+  :ensure t
+  :config
+  (load-theme 'base16-default-dark t))
+#+END_SRC
+
+** Infrastructure
+Ensure graphical emacs picks up the same environment variables as the shell.  Copy values of other environment variables by customizing exec-path-from-shell-variables before invoking exec-path-from-shell-initialize, or by calling exec-path-from-shell-copy-env, e.g.: (exec-path-from-shell-copy-env "PYTHONPATH")
+#+BEGIN_SRC emacs-lisp
+  (use-package exec-path-from-shell
+    :if (memq window-system '(mac ns x))
+    :ensure t
+    :config
+    (exec-path-from-shell-initialize))
+#+END_SRC
+
+This next one could be under "visual" as well, since I find the default splash screen to be horrifying.  
+#+BEGIN_SRC emacs-lisp
+    (use-package dashboard
+      :ensure t
+      :config
+      (dashboard-setup-startup-hook)
+      (setq dashboard-banner-logo-title "Welcome to Emacs")
+      (setq dashboard-startup-banner "~/.emacs.d/dashboard-logo.png"))
+#+END_SRC
+
+If you're like me and get anal-retentive about having, say, the "working buffer" on the top, or the left, and your buffer that you're referencing on the right/bottom, then transpose-frame is for you.  Relevant commands are M-x flip-frame for vertical and M-x flop-frame for horizontal flipping.
+#+BEGIN_SRC emacs-lisp
+  (use-package transpose-frame
+    :ensure t)
+#+END_SRC
+
+There's also a handy setting to convert yes/no prompts to y/n prompts:
+
+#+BEGIN_SRC emacs-lisp
+  (fset 'yes-or-no-p 'y-or-n-p)
+#+END_SRC
+
+Smart mode-line allows shortening and regexing of modeline contents
+#+BEGIN_SRC emacs-lisp
+  (use-package smart-mode-line
+    :ensure t
+    :init
+    (sml/setup)
+    :config
+    (add-to-list 'sml/replacer-regexp-list '("^~/Code/zuluhotel/" ":ZH:") t))
+#+END_SRC
+
+** Editing
+I prefer company-mode for completion over, say, ido.
+#+BEGIN_SRC emacs-lisp
+(use-package company
+  :ensure t
+  :mode "company-mode"
+  :config
+  (add-to-list 'company-backends 'company-omnisharp))
+#+END_SRC
+
+Paredit rocks for lisp and friends.
+#+BEGIN_SRC emacs-lisp
+  (use-package paredit
+    :mode "paredit-mode"
+    :ensure t
+    :commands enable-paredit-mode
+    :init
+    (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
+    (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+    (add-hook 'ielm-mode-hook #'enable-paredit-mode)
+    (add-hook 'lisp-mode-hook #'enable-paredit-mode)
+    (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+    (add-hook 'scheme-mode-hook #'enable-paredit-mode))
+#+END_SRC
+
+Rainbow delimeters makes it easier to judge what's nested inside what, especially in lisp:
+#+BEGIN_SRC emacs-lisp
+  (use-package rainbow-delimiters
+    :mode "rainbow-delimiters-mode"
+    :ensure t
+    :commands rainbow-delimiters-mode
+    :init
+    (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+#+END_SRC
+
+** Org
+The org folks have their own ELPA repository, but since emacs has a built-in org version that is usually older than current, the only way I have found to force install of the org-elpa version is to ensure org-plus-contrib is also installed.
+#+BEGIN_SRC emacs-lisp
+  (use-package org
+    :ensure org-plus-contrib
+    :init
+    (setq org-src-tab-acts-natively t)
+    (setq org-startup-truncated nil))
+
+  (use-package org-bullets
+    :ensure t
+    :init
+    (add-hook 'org-mode-hook (lambda () (org-bullets-mode 1))))
+#+END_SRC
+
+I use jupyter notebooks on a semi-regular basis and was delighted to discover ob-ipython, which lets you call out to a jupyter kernel from your emacs buffers.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package ob-ipython
+    :ensure t
+    :config
+    (org-babel-do-load-languages
+     'org-babel-load-languages
+     '((ipython . t))))
+#+END_SRC
+
+** Latex and friends
+
+I use Auctex like most people probably do.
+
+#+BEGIN_SRC emacs-lisp
+  (use-package tex
+    :ensure auctex
+    :mode
+    ("\\.tex\\'" . LaTeX-mode)
+    :init
+    (add-hook 'LaTeX-mode-hook (lambda ()
+				 (LaTeX-math-mode 1)
+				 (TeX-fold-mode 1)
+				 (TeX-PDF-mode 1))))
+#+END_SRC
