@@ -1,3 +1,5 @@
+
+
 #+TITILE: My Emacs configuration
 #+AUTHOR: Nathan Van Ymeren
 #+STARTUP: showeverything
@@ -68,7 +70,13 @@ Ensure graphical emacs picks up the same environment variables as the shell.  Co
     (exec-path-from-shell-initialize))
 #+END_SRC
 
-This next one could be under "visual" as well, since I find the default splash screen to be horrifying.  
+This next one could be under "visual" as well, since I find the default splash screen to be horrifying.  First a helper function to call cowsay:
+#+BEGIN_SRC emacs-lisp
+(defun dashboard-insert-cowsay (list-size)
+  (insert (shell-command-to-string "fortune | cowsay")))
+#+END_SRC
+
+Then we can stuff it into the dashboard.
 #+BEGIN_SRC emacs-lisp
     (use-package dashboard
       :ensure t
