@@ -1,13 +1,19 @@
+
+
 #+TITILE: My Emacs configuration
 #+AUTHOR: Nathan Van Ymeren
 #+STARTUP: showeverything
+#+STARTUP: inlineimages
 #+PROPERTY: header-args :tangle yes
 # the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
 
-* Configuration
-Caveat:  This config is targeted at macOS, using the railwaycat fork of emacs.  Your mileage may vary if you adapt this for linux, etc.
-** About this file
+* About this file
 This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.
+
+* Configuration
+This is my emacs configuration repository.  I try to manage everything with use-package, and I don't typically run via an emacs daemon.  Caveat:  This config is targeted at macOS, using the railwaycat fork of emacs.  Your mileage may vary if you adapt this for linux, etc.  Here's what it looks like:
+
+[[./demo.png]]
 
 # note that typing "<s" followed by TAB will insert a new src block
 ** Miscellaneous setup options and fixes
@@ -17,7 +23,7 @@ I don't often use Customize but I do like to have my Custom options in their own
   (load custom-file)
 #+END_SRC
 
-Dear emacs, stop littering.
+Dear emacs, stop littering my damn filesystem with ~files everywhere.
 #+BEGIN_SRC emacs-lisp
   (setq backup-directory-alist `(("." . "~/.emacs.d/saves")))
 #+END_SRC
@@ -190,10 +196,17 @@ Markdown-mode provides a major mode for markdown as well as github-flavoured mar
     :init (setq markdown-command "multimarkdown"))
 #+END_SRC
 
-I also contribute to a rather large project written in C#, so I require csharp-mode:
+I also contribute to a rather large project written in C#, so I require csharp-mode which isn't built-in.  There's also the omnisharp-emacs package which allows for "intellisense" code completion in emacs buffers via company-mode and roslyn:
 #+BEGIN_SRC emacs-lisp
   (use-package csharp-mode
     :ensure t)
+
+  (use-package omnisharp
+    :ensure t
+    :after company
+    :after csharp-mode
+    :init
+    (add-hook 'csharp-mode-hook #'company-mode))
 #+END_SRC
 
 ** Org

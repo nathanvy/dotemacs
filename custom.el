@@ -8,7 +8,7 @@
     ("b181ea0cc32303da7f9227361bb051bbb6c3105bb4f386ca22a06db319b08882" "b9e9ba5aeedcc5ba8be99f1cc9301f6679912910ff92fdf7980929c2fc83ab4d" "84d2f9eeb3f82d619ca4bfffe5f157282f4779732f48a5ac1484d94d5ff5b279" "d88c43fe03ac912e35963695caf0ae54bc6ce6365c3a42da434ef639f7a37399" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))
  '(package-selected-packages
    (quote
-    (smex esup telephone-line csharp-mode markdown-mode olivetti poet-theme projectile all-the-icons ob-ipython auctex org-bullets org-plus-contrib rainbow-delimiters paredit company smart-mode-line exec-path-from-shell base16-theme use-package)))
+    (omnisharp smex esup telephone-line csharp-mode markdown-mode olivetti poet-theme projectile all-the-icons ob-ipython auctex org-bullets org-plus-contrib rainbow-delimiters paredit company smart-mode-line exec-path-from-shell base16-theme use-package)))
  '(sml/mode-width
    (if
        (eq
