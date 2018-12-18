@@ -1,5 +1,3 @@
-
-
 #+TITILE: My Emacs configuration
 #+AUTHOR: Nathan Van Ymeren
 #+STARTUP: showeverything
@@ -212,17 +210,18 @@ I also contribute to a rather large project written in C#, so I require csharp-m
 ** Org
 The org folks have their own ELPA repository, but since emacs has a built-in org version that is usually older than current, the only way I have found to force install of the org-elpa version is to ensure org-plus-contrib is also installed.
 #+BEGIN_SRC emacs-lisp
-    (use-package org
-      :ensure org-plus-contrib
-      :init
-      (setq org-src-tab-acts-natively t)
-      (setq org-startup-truncated nil))
+  (use-package org
+    :ensure org-plus-contrib
+    :init
+    (setq org-list-allow-alphabetical t)
+    (setq org-src-tab-acts-natively t)
+    (setq org-startup-truncated nil))
 
-    (use-package org-bullets
-      :ensure t
-      :init
-      (add-hook 'org-mode-hook (lambda () 
-				 (org-bullets-mode 1))))
+  (use-package org-bullets
+    :ensure t
+    :init
+    (add-hook 'org-mode-hook (lambda () 
+			       (org-bullets-mode 1))))
 #+END_SRC
 
 I use jupyter notebooks on a semi-regular basis and was delighted to discover ob-ipython, which lets you call out to a jupyter kernel from your emacs buffers.
