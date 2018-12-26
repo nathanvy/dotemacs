@@ -8,6 +8,12 @@
 * About this file
 This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.
 
+* Praise
+#+begin_quote
+I love that your emacs is on way more steroids than my emacs.  If I showed you my init file you'd be embarassed
+-- admax88
+#+end_quote
+
 * Configuration
 This is my emacs configuration repository.  I try to manage everything with use-package, and I don't typically run via an emacs daemon.  Caveat:  This config is targeted at macOS, using the railwaycat fork of emacs.  Your mileage may vary if you adapt this for linux, etc.  Here's what it looks like:
 
