@@ -1,4 +1,3 @@
-
 #+TITILE: My Emacs configuration
 #+AUTHOR: Nathan Van Ymeren
 #+STARTUP: showeverything
@@ -53,7 +52,7 @@ I also like "use-package" so we'll require that.
 #+END_SRC
 
 ** Visual configuration
-Emacs is actually quite ugly by default so let's address that.
+Emacs is actually quite ugly by default so let's address that by removing the hideous toolbar icons.
 #+BEGIN_SRC emacs-lisp
   (column-number-mode t)
   (tool-bar-mode -1)
@@ -113,7 +112,7 @@ This next one could be under "visual" as well, since I find the default splash s
   (insert (shell-command-to-string "fortune | cowsay")))
 #+END_SRC
 
-Then we can stuff it into the dashboard.
+Then we can stuff it into the dashboard.  In the future I plan to have the cow give me fortune-cookie wisdom when I launch emacs.
 #+BEGIN_SRC emacs-lisp
     (use-package dashboard
       :ensure t
@@ -158,6 +157,7 @@ Smart M-x aka smex:
 Other miscellaneous keybinds:
 #+BEGIN_SRC emacs-lisp
   (global-set-key (kbd "C-c g") 'rgrep)
+  (global-set-key (kbd "C-c q") 'query-replace-regexp)
 #+END_SRC
 
 ** Editing
@@ -247,7 +247,7 @@ I use jupyter notebooks on a semi-regular basis and was delighted to discover ob
      '((ipython . t))))
 #+END_SRC
 
-For text editing, I like to use Olivetti mode, which centres the buffer contents, and variable-pitch-mode which makes emacs look amazing.
+For text editing and writing prose, I like to use Olivetti mode which centres the buffer contents, and variable-pitch-mode which makes emacs look a lot more modern.
 #+BEGIN_SRC emacs-lisp
   (use-package olivetti
     :ensure t
