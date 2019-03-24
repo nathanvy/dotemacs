@@ -170,7 +170,25 @@
        (add-to-list 'company-backends 'company-omnisharp))
    #+END_SRC
 
-   Paredit rocks for lisp and friends.
+   SLIME is the Superior Lisp Interaction Mode for Emacs and is one of the best Lisp development environments out there.  I've also installed the slime-company package for code completion via company-mode
+   #+BEGIN_SRC emacs-lisp
+     (use-package slime
+       :ensure t
+       :config
+       (setq inferior-lisp-program "/usr/local/bin/sbcl")
+       (add-to-list 'slime-contribs 'slime-fancy))
+
+     (use-package slime-company
+       :ensure t
+       :init
+       (slime-setup '(slime-fancy slime-company))
+       (define-key company-active-map (kbd "\C-n") 'company-select-next)
+       (define-key company-active-map (kbd "\C-p") 'company-select-previous)
+       (define-key company-active-map (kbd "\C-d") 'company-show-doc-buffer)
+       (define-key company-active-map (kbd "M-.") 'company-show-location))
+   #+END_SRC
+
+   On a related subject, Paredit rocks for lisp and friends.  It lets you essentially never worry about mismatched delimiters, ever.
    #+BEGIN_SRC emacs-lisp
      (use-package paredit
        :mode "paredit-mode"
