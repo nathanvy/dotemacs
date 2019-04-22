@@ -128,7 +128,8 @@
        :ensure t
        :config
        (global-set-key (kbd "C-c o") 'flop-frame)
-       (global-set-key (kbd "C-c i") 'flip-frame))
+       (global-set-key (kbd "C-c i") 'flip-frame)
+       (global-set-key (kbd "C-c r") 'rotate-frame-clockwise))
    #+END_SRC
 
    There's also a handy setting to convert yes/no prompts to y/n prompts:
@@ -254,6 +255,8 @@
        (add-hook 'org-mode-hook (lambda () 
 				  (org-bullets-mode 1))))
 
+     (use-package ox-rfc
+       :ensure t)
      (use-package gnuplot-mode
        :ensure t)
    #+END_SRC
