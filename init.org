@@ -65,18 +65,12 @@
    #+BEGIN_SRC emacs-lisp
      (use-package base16-theme
        :if window-system
-       :ensure t)
-   #+END_SRC
-
-   And Kunal Bhalla came up with the poet theme, works really well for writing prose/org stuff:
-   #+BEGIN_SRC emacs-lisp
-     (use-package poet-theme
        :ensure t
-       :if window-system
-       :config 
+       :config
        (set-face-attribute 'default nil :family "Monaco")
        (set-face-attribute 'fixed-pitch nil :family "Monaco")
-       (load-theme 'poet))
+       (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
+       (load-theme 'base16-default-dark))
    #+END_SRC
 
    All-the-icons has some great content:
@@ -122,6 +116,7 @@
        :config
        (dashboard-setup-startup-hook)
        (setq dashboard-banner-logo-title "Welcome to Emacs")
+       (setq recentf-exclude '("bookmarks"))
        (setq dashboard-startup-banner "~/.emacs.d/dashboard-logo.png"))
    #+END_SRC
 
