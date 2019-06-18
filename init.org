@@ -56,8 +56,10 @@
    Emacs is actually quite ugly by default so let's address that by removing the hideous toolbar icons.
    #+BEGIN_SRC emacs-lisp
      (column-number-mode t)
-     (tool-bar-mode -1)
-     (scroll-bar-mode -1)
+     (if window-system
+	 (progn
+	   (tool-bar-mode -1)
+	   (scroll-bar-mode -1)))
    #+END_SRC
 
    Chris Kempson came up with a very carefully-chosen set of syntax highlighting colours that he calls Base16.
