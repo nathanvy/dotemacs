@@ -155,11 +155,17 @@
        (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command))
    #+END_SRC
 
-   Other miscellaneous keybinds:
+   Other miscellaneous keybinds and settings:
    #+BEGIN_SRC emacs-lisp
      (global-set-key (kbd "C-c g") 'rgrep)
      (global-set-key (kbd "C-c q") 'query-replace-regexp)
+
+     ;; for clarity: this is regex; \. and \' are escapes because . and ' have special meaning in regex
+     (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode))
    #+END_SRC
+
+   #+RESULTS:
+   : query-replace-regexp
 
 ** Editing
    I prefer company-mode for completion
@@ -247,7 +253,14 @@
        :init
        (setq org-list-allow-alphabetical t)
        (setq org-src-tab-acts-natively t)
-       (setq org-startup-truncated nil))
+       (setq org-startup-truncated nil)
+       :config
+       (org-babel-do-load-languages 'org-babel-load-languages '((lisp . t) (emacs-lisp . t)))
+       (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
+       (set-face-attribute 'org-code nil :inherit 'fixed-pitch)
+       (set-face-attribute 'org-block nil :inherit 'fixed-pitch)
+       (set-face-attribute 'org-block-begin-line nil :inherit 'fixed-pitch)
+       (set-face-attribute 'org-block-end-line nil :inherit 'fixed-pitch))
 
      (use-package org-bullets
        :ensure t
@@ -260,16 +273,6 @@
 
      (use-package gnuplot-mode
        :ensure t)
-   #+END_SRC
-
-   I use jupyter notebooks on a semi-regular basis and was delighted to discover ob-ipython, which lets you call out to a jupyter kernel from your emacs buffers.
-   #+BEGIN_SRC emacs-lisp
-     (use-package ob-ipython
-       :ensure t
-       :config
-       (org-babel-do-load-languages
-	'org-babel-load-languages
-	'((ipython . t))))
    #+END_SRC
 
    For text editing and writing prose, I like to use Olivetti mode which centres the buffer contents, and variable-pitch-mode which makes emacs look a lot more modern.
