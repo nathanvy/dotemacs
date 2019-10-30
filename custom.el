@@ -3,6 +3,7 @@
  ;; If you edit it by hand, you could mess it up, so be careful.
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
+ '(canlock-password "2a75ea3f8c03484a2a3f629c60019d22bfc06cb3")
  '(custom-safe-themes
    (quote
     ("16dd114a84d0aeccc5ad6fd64752a11ea2e841e3853234f19dc02a7b91f5d661" "9129c2759b8ba8e8396fe92535449de3e7ba61fd34569a488dd64e80f5041c9f" "b181ea0cc32303da7f9227361bb051bbb6c3105bb4f386ca22a06db319b08882" "b9e9ba5aeedcc5ba8be99f1cc9301f6679912910ff92fdf7980929c2fc83ab4d" "84d2f9eeb3f82d619ca4bfffe5f157282f4779732f48a5ac1484d94d5ff5b279" "d88c43fe03ac912e35963695caf0ae54bc6ce6365c3a42da434ef639f7a37399" "3c83b3676d796422704082049fc38b6966bcad960f896669dfc21a7a37a748fa" default)))

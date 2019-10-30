@@ -15,9 +15,7 @@
   #+end_quote
 
 * Configuration
-  This is my emacs configuration repository.  I try to manage everything with use-package, and I don't typically run via an emacs daemon.  Caveat:  This config is targeted at macOS, using the railwaycat fork of emacs.  Your mileage may vary if you adapt this for linux, etc.  Here's what it looks like:
-
-  [[./demo.png]]
+  This is my emacs configuration repository.  I try to manage everything with use-package, and I don't typically run via an emacs daemon.  Caveat:  This config is targeted at macOS, using the railwaycat fork of emacs.  Your mileage may vary if you adapt this for linux, etc.
 
   # note that typing "<s" followed by TAB will insert a new src block
 ** Miscellaneous setup options and fixes
@@ -245,6 +243,13 @@
        :after csharp-mode)
    #+END_SRC
 
+   And of course what .emacs is complete without projectile?
+   #+BEGIN_SRC emacs-lisp
+     (use-package projectile
+       :ensure t)
+
+   #+end_src
+
 ** Org
    The org folks have their own ELPA repository, but since emacs has a built-in org version that is usually older than current, the only way I have found to force install of the org-elpa version is to ensure org-plus-contrib is also installed.
    #+BEGIN_SRC emacs-lisp
@@ -300,3 +305,12 @@
 				    (TeX-fold-mode 1)
 				    (TeX-PDF-mode 1))))
    #+END_SRC
+
+** GNUS
+
+   I don't Usenet very much (or at all) but I do use nntp on a private news server:
+
+   #+BEGIN_SRC emacs-lisp
+     (setq gnus-select-method '(nntp "gus.vany.ca"))
+   #+end_src
+
