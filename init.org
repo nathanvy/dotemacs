@@ -278,6 +278,12 @@
 
      (use-package gnuplot-mode
        :ensure t)
+
+     (use-package ob-ipython
+       :ensure t)
+
+     (use-package ein
+       :ensure t)
    #+END_SRC
 
    For text editing and writing prose, I like to use Olivetti mode which centres the buffer contents, and variable-pitch-mode which makes emacs look a lot more modern.
