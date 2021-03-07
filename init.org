@@ -17,7 +17,6 @@
 * Configuration
   This is my emacs configuration repository.  I try to manage everything with use-package, and I don't typically run via an emacs daemon.  Caveat:  This config is targeted at macOS, using the railwaycat fork of emacs.  Your mileage may vary if you adapt this for linux, etc.
 
-  # note that typing "<s" followed by TAB will insert a new src block
 ** Miscellaneous setup options and fixes
    I don't often use Customize but I do like to have my Custom options in their own tidy file.
    #+BEGIN_SRC emacs-lisp
@@ -60,17 +59,16 @@
 	   (scroll-bar-mode -1)))
    #+END_SRC
 
-   Chris Kempson came up with a very carefully-chosen set of syntax highlighting colours that he calls Base16.
-   https://github.com/belak/base16-emacs
+   I'm currently shopping for a new daily-driver theme but base16 just wasn't readable enough for me on dark backgrounds.  The contrast, especially in code comments, was just too low and I ended up having to crank the display brightness way up which defeats the point.  I'm temporarily settled on solarzed-dark.
    #+BEGIN_SRC emacs-lisp
-     (use-package base16-theme
+     (use-package solarized-theme
        :if window-system
        :ensure t
        :config
        (set-face-attribute 'default nil :family "Monaco")
        (set-face-attribute 'fixed-pitch nil :family "Monaco")
        (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
-       (load-theme 'base16-default-dark))
+       (load-theme 'solarized-dark))
    #+END_SRC
 
    All-the-icons has some great content:
@@ -156,7 +154,9 @@
    Other miscellaneous keybinds and settings:
    #+BEGIN_SRC emacs-lisp
      (global-set-key (kbd "C-c g") 'rgrep)
-     (global-set-key (kbd "C-c q") 'query-replace-regexp)
+     (global-set-key (kbd "C-c q") 'query-replace)
+     (global-set-key (kbd "C-c r") 'query-replace-regexp)
+     (global-set-key (kbd "C-c d") 'omnisharp-go-to-definition)
 
      ;; for clarity: this is regex; \. and \' are escapes because . and ' have special meaning in regex
      (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode))
@@ -175,22 +175,14 @@
        (add-to-list 'company-backends 'company-omnisharp))
    #+END_SRC
 
-   SLIME is the Superior Lisp Interaction Mode for Emacs and is one of the best Lisp development environments out there.  I've also installed the slime-company package for code completion via company-mode
+   SLY is a fork of SLIME, the Superior Lisp Interaction Mode for Emacs, which has a more modern REPL and is more actively developed.  Works with company mode out of the box.
    #+BEGIN_SRC emacs-lisp
-     (use-package slime
-       :ensure t
-       :config
-       (setq inferior-lisp-program "/usr/local/bin/sbcl")
-       (add-to-list 'slime-contribs 'slime-fancy))
-
-     (use-package slime-company
+     (use-package sly
        :ensure t
        :init
-       (slime-setup '(slime-fancy slime-company))
-       (define-key company-active-map (kbd "\C-n") 'company-select-next)
-       (define-key company-active-map (kbd "\C-p") 'company-select-previous)
-       (define-key company-active-map (kbd "\C-d") 'company-show-doc-buffer)
-       (define-key company-active-map (kbd "M-.") 'company-show-location))
+       (add-hook 'lisp-mode-hook #'company-mode)
+       :config
+       (setq inferior-lisp-program "sbcl"))
    #+END_SRC
 
    On a related subject, Paredit rocks for lisp and friends.  It lets you essentially never worry about mismatched delimiters, ever.
@@ -208,14 +200,21 @@
        (add-hook 'scheme-mode-hook #'enable-paredit-mode))
    #+END_SRC
 
-   Rainbow delimeters makes it easier to judge what's nested inside what, especially in lisp:
+   Rainbow delimeters makes it easier to judge what's nested inside what, but for lisp I like rainbow-blocks which highlights based on scope rather than syntax:
    #+BEGIN_SRC emacs-lisp
      (use-package rainbow-delimiters
        :mode "rainbow-delimiters-mode"
        :ensure t
-       :commands rainbow-delimiters-mode
+       :commands rainbow-delimiters-mode)
+   #+END_SRC
+
+   #+BEGIN_SRC emacs-lisp
+     (use-package rainbow-blocks
+       :mode "rainbow-blocks-mode"
+       :ensure t
        :init
-       (add-hook 'prog-mode-hook #'rainbow-delimiters-mode))
+       (add-hook 'lisp-mode-hook #'rainbow-blocks-mode)
+       (add-hook 'emacs-lisp-mode-hook #'rainbow-blocks-mode))
    #+END_SRC
 
    Markdown-mode provides a major mode for markdown as well as github-flavoured markdown
@@ -235,7 +234,8 @@
        :ensure t
        :init
        (add-hook 'csharp-mode-hook #'company-mode)
-       (add-hook 'csharp-mode-hook #'omnisharp-mode))
+       (add-hook 'csharp-mode-hook #'omnisharp-mode)
+       (add-hook 'csharp-mode-hook #'rainbow-delimiters-mode))
 
      (use-package omnisharp
        :ensure t
@@ -256,16 +256,20 @@
      (use-package org
        :ensure org-plus-contrib
        :init
-       (setq org-list-allow-alphabetical t)
-       (setq org-src-tab-acts-natively t)
-       (setq org-startup-truncated nil)
+       (setf org-list-allow-alphabetical t)
+       (setf org-src-tab-acts-natively t)
+       (setf org-startup-truncated nil)
        :config
        (org-babel-do-load-languages 'org-babel-load-languages '((lisp . t) (emacs-lisp . t)))
        (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
        (set-face-attribute 'org-code nil :inherit 'fixed-pitch)
        (set-face-attribute 'org-block nil :inherit 'fixed-pitch)
        (set-face-attribute 'org-block-begin-line nil :inherit 'fixed-pitch)
-       (set-face-attribute 'org-block-end-line nil :inherit 'fixed-pitch))
+       (set-face-attribute 'org-block-end-line nil :inherit 'fixed-pitch)
+       (set-face-attribute 'org-block-begin-line nil :slant 'normal :underline nil :extend nil)
+       (set-face-attribute 'org-block-end-line nil :slant 'normal :overline nil :extend nil)
+       (setf org-html-preamble nil)
+       (setf org-html-postamble nil))
 
      (use-package org-bullets
        :ensure t
@@ -277,9 +281,6 @@
        :ensure t)
 
      (use-package gnuplot-mode
-       :ensure t)
-
-     (use-package ob-ipython
        :ensure t)
 
      (use-package ein
