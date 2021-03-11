@@ -250,6 +250,26 @@
 
    #+end_src
 
+   I recently have begun tinkering with some old Raspberry Pi and Beaglebone single-board computers that I have lying around.  I'd normally prefer to work in Lisp but the library support for e.g. GPIO just isn't there, and Python remains the lingua franca of the Raspberry Pi world.
+
+   Therefore:
+
+   #+Begin_src emacs-lisp
+     (use-package python
+       :ensure t
+       :config
+       (add-hook 'python-mode-hook #'company-mode)
+       (add-hook 'python-mode-hook #'jedi:setup))
+
+     (use-package company-jedi
+       :ensure t
+       :after company
+       :after python
+       :config
+       (add-to-list 'company-backends 'company-jedi)
+       (setf jedi:complete-on-dot t))
+   #+end_src
+   
 ** Org
    The org folks have their own ELPA repository, but since emacs has a built-in org version that is usually older than current, the only way I have found to force install of the org-elpa version is to ensure org-plus-contrib is also installed.
    #+BEGIN_SRC emacs-lisp
