@@ -123,6 +123,7 @@
      (use-package transpose-frame
        :ensure t
        :config
+       (global-set-key (kbd "C-c t") 'transpose-frame)
        (global-set-key (kbd "C-c o") 'flop-frame)
        (global-set-key (kbd "C-c i") 'flip-frame)
        (global-set-key (kbd "C-c r") 'rotate-frame-clockwise))
@@ -155,7 +156,7 @@
    #+BEGIN_SRC emacs-lisp
      (global-set-key (kbd "C-c g") 'rgrep)
      (global-set-key (kbd "C-c q") 'query-replace)
-     (global-set-key (kbd "C-c r") 'query-replace-regexp)
+     (global-set-key (kbd "C-c x") 'query-replace-regexp)
      (global-set-key (kbd "C-c d") 'omnisharp-go-to-definition)
 
      ;; for clarity: this is regex; \. and \' are escapes because . and ' have special meaning in regex
