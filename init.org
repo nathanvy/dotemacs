@@ -26,7 +26,24 @@
 
    Dear emacs, stop littering my damn filesystem with ~files everywhere.
    #+BEGIN_SRC emacs-lisp
-     (setq backup-directory-alist `(("." . "~/.emacs.d/saves")))
+
+     (setq temporary-file-directory "~/.emacs.d/saves")
+     (setq backup-directory-alist
+	   `((".*" . ,temporary-file-directory)))
+     (setq auto-save-file-name-transforms
+	   `((".*" ,temporary-file-directory t)))
+
+     (message "Deleting old backup files...")
+     (let ((week (* 60 60 24 7))
+	   (current (float-time (current-time))))
+       (dolist (file (directory-files temporary-file-directory t))
+	 (when (and (backup-file-name-p file)
+		    (> (- current (float-time (nth 5 (file-attributes file))))
+		       week))
+	   (message "%s" file)
+	   (delete-file file))))
+
+
    #+END_SRC
 
 ** Package management
@@ -61,14 +78,14 @@
 
    I'm currently shopping for a new daily-driver theme but base16 just wasn't readable enough for me on dark backgrounds.  The contrast, especially in code comments, was just too low and I ended up having to crank the display brightness way up which defeats the point.  I'm temporarily settled on solarzed-dark.
    #+BEGIN_SRC emacs-lisp
-     (use-package solarized-theme
+     (use-package vscode-dark-plus-theme
        :if window-system
        :ensure t
        :config
        (set-face-attribute 'default nil :family "Monaco")
        (set-face-attribute 'fixed-pitch nil :family "Monaco")
        (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
-       (load-theme 'solarized-dark))
+       (load-theme 'vscode-dark-plus t))
    #+END_SRC
 
    All-the-icons has some great content:
@@ -94,7 +111,7 @@
        (exec-path-from-shell-initialize))
    #+END_SRC
 
-   I do use ido:
+   I do (insert rimshot here) use ido:
    #+BEGIN_SRC emacs-lisp
      (setq ido-enable-flex-matching t)
      (setq ido-everywhere t)
@@ -113,7 +130,7 @@
        :ensure t
        :config
        (dashboard-setup-startup-hook)
-       (setq dashboard-banner-logo-title "Welcome to Emacs")
+       (setq dashboard-banner-logo-title "Welcome Hackerman")
        (setq recentf-exclude '("bookmarks"))
        (setq dashboard-startup-banner "~/.emacs.d/dashboard-logo.png"))
    #+END_SRC
@@ -134,13 +151,17 @@
      (fset 'yes-or-no-p 'y-or-n-p)
    #+END_SRC
 
-   I've actually been going back and forth a lot regarding mode line themes, and recently found myself using powerline:
-   #+BEGIN_SRC emacs-lisp
-     (use-package powerline
+   I want a dank-ass parrot helping me out:
+   #+begin_src emacs-lisp
+     (use-package parrot
+       :if window-system
        :ensure t
-       :config (powerline-default-theme))
-   #+END_SRC
-
+       :config
+       (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
+       (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
+       (parrot-mode))
+   #+end_src
+   
    Smart M-x aka smex:
    #+BEGIN_SRC emacs-lisp
      (use-package smex
@@ -167,13 +188,42 @@
    : query-replace-regexp
 
 ** Editing
+   First things first, Language-Server Protocol has deprecated a lot of previously-indispensable infrastructure so let's get that going:
+
+   #+begin_src emacs-lisp
+     (use-package lsp-mode
+       :ensure t
+       :init
+       ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+       (setq lsp-keymap-prefix "C-c l")
+       :hook ((csharp-mode . lsp)
+	      (python-mode . (lambda ()
+			       (require 'lsp-python-ms)
+			       (lsp))))
+       :commands lsp)
+
+     (use-package lsp-ui
+       :ensure t
+       :commands lsp-ui-mode)
+
+     (use-package flycheck
+       :ensure t
+       :init (global-flycheck-mode))
+
+     (use-package lsp-treemacs
+       :ensure t
+       :commands lsp-treemacs-errors-list)
+
+   #+end_src
    I prefer company-mode for completion
    #+BEGIN_SRC emacs-lisp
-     (use-package company
+	  (use-package company
+	    :ensure t
+	    :mode "company-mode")
+	    
+     (use-package company-box
        :ensure t
-       :mode "company-mode"
-       :config
-       (add-to-list 'company-backends 'company-omnisharp))
+       :hook (company-mode . company-box-mode))
    #+END_SRC
 
    SLY is a fork of SLIME, the Superior Lisp Interaction Mode for Emacs, which has a more modern REPL and is more actively developed.  Works with company mode out of the box.
@@ -229,20 +279,15 @@
        :init (setq markdown-command "multimarkdown"))
    #+END_SRC
 
-   I also contribute to a rather large project written in C#, so I require csharp-mode which isn't built-in.  There's also the omnisharp-emacs package which allows for "intellisense" code completion in emacs buffers via company-mode and roslyn:
+   I also contribute to a rather large project written in C#, so I require csharp-mode which isn't built-in.  
    #+BEGIN_SRC emacs-lisp
      (use-package csharp-mode
        :ensure t
        :init
        (add-hook 'csharp-mode-hook #'company-mode)
-       (add-hook 'csharp-mode-hook #'omnisharp-mode)
        (add-hook 'csharp-mode-hook #'rainbow-delimiters-mode))
 
-     (use-package omnisharp
-       :ensure t
-       :after company
-       :after csharp-mode)
-   #+END_SRC
+        #+END_SRC
 
    And of course what .emacs is complete without projectile?
    #+BEGIN_SRC emacs-lisp
@@ -257,18 +302,15 @@
 
    #+Begin_src emacs-lisp
      (use-package python
-       :ensure t
-       :config
-       (add-hook 'python-mode-hook #'company-mode)
-       (add-hook 'python-mode-hook #'jedi:setup))
+	    :ensure t
+	    :config
+	    (add-hook 'python-mode-hook #'company-mode))
 
-     (use-package company-jedi
+     (use-package lsp-python-ms
        :ensure t
-       :after company
-       :after python
-       :config
-       (add-to-list 'company-backends 'company-jedi)
-       (setf jedi:complete-on-dot t))
+       :after (lsp-mode python)
+       :init (setq lsp-python-ms-auto-install-server t))
+
    #+end_src
    
 ** Org
@@ -295,7 +337,7 @@
      (use-package org-bullets
        :ensure t
        :init
-       (add-hook 'org-mode-hook (lambda () 
+       (add-hook 'org-mode-hook (lambda ()
 				  (org-bullets-mode 1))))
 
      (use-package ox-rfc
@@ -333,12 +375,3 @@
 				    (TeX-fold-mode 1)
 				    (TeX-PDF-mode 1))))
    #+END_SRC
-
-** GNUS
-
-   I don't Usenet very much (or at all) but I do use nntp on a private news server:
-
-   #+BEGIN_SRC emacs-lisp
-     (setq gnus-select-method '(nntp "gus.vany.ca"))
-   #+end_src
-
