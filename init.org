@@ -178,7 +178,7 @@
      (global-set-key (kbd "C-c g") 'rgrep)
      (global-set-key (kbd "C-c q") 'query-replace)
      (global-set-key (kbd "C-c x") 'query-replace-regexp)
-     (global-set-key (kbd "C-c d") 'omnisharp-go-to-definition)
+     (global-set-key (kbd "C-c d") 'lsp-find-definition)
 
      ;; for clarity: this is regex; \. and \' are escapes because . and ' have special meaning in regex
      (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode))
