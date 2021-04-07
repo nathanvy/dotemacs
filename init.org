@@ -11,20 +11,21 @@
   Caveat:  I primarily use emacs on macOS using the railwaycat fork, so your mileage may vary.
 
 ** Infrastructure
-   First set the package archives.  I use MELPA as well as the Org-specific repository, so we'll set those.  I prefer use-package to el-get or straight.el so that's what I happen to use.
+   First enable lexical binding, then set the package archives.  I use MELPA as well as the Org-specific repository, so we'll set those.  I prefer use-package to el-get or straight.el so that's what I happen to use.
    
    #+BEGIN_SRC emacs-lisp
-	(setq package-archives '(("MELPA" . "https://melpa.org/packages/")
-				 ("GNU" . "https://elpa.gnu.org/packages/")
-				 ("org" . "http://orgmode.org/elpa/")))
-	(package-initialize)
+     ;; -*- lexical-binding: t -*-
+     (setq package-archives '(("MELPA" . "https://melpa.org/packages/")
+			      ("GNU" . "https://elpa.gnu.org/packages/")
+			      ("org" . "http://orgmode.org/elpa/")))
+     (package-initialize)
 
-	(unless (package-installed-p 'use-package)
-	  (package-refresh-contents)
-	  (package-install 'use-package))
-	(setq use-package-verbose t)
-	(setq use-package-always-ensure t)
-	(require 'use-package)
+     (unless (package-installed-p 'use-package)
+       (package-refresh-contents)
+       (package-install 'use-package))
+     (setq use-package-verbose t)
+     (setq use-package-always-ensure t)
+     (require 'use-package)
    #+END_SRC
 
    I don't often use Customize but I do like to have my Custom options in their own tidy file.
@@ -53,7 +54,7 @@
 	   (delete-file file))))
    #+END_SRC
 
-      Ensures graphical emacs picks up the same environment variables as the shell.  Copy values of other environment variables by customizing exec-path-from-shell-variables before invoking exec-path-from-shell-initialize, or by calling exec-path-from-shell-copy-env, e.g.: (exec-path-from-shell-copy-env "PYTHONPATH")
+   Ensures graphical emacs picks up the same environment variables as the shell.  Copy values of other environment variables by customizing exec-path-from-shell-variables before invoking exec-path-from-shell-initialize, or by calling exec-path-from-shell-copy-env, e.g.: (exec-path-from-shell-copy-env "PYTHONPATH")
    #+BEGIN_SRC emacs-lisp
      (use-package exec-path-from-shell
        :if (memq window-system '(mac ns x))
@@ -144,12 +145,12 @@
    
    #+BEGIN_SRC emacs-lisp
      (use-package vscode-dark-plus-theme
-	    :if window-system
-	    :config
-	    (set-face-attribute 'default nil :family "Monaco")
-	    (set-face-attribute 'fixed-pitch nil :family "Monaco")
-	    (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
-	    (load-theme 'vscode-dark-plus t))
+       :if window-system
+       :config
+       (set-face-attribute 'default nil :family "Monaco")
+       (set-face-attribute 'fixed-pitch nil :family "Monaco")
+       (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
+       (load-theme 'vscode-dark-plus t))
 
      (use-package all-the-icons)
    #+END_SRC
