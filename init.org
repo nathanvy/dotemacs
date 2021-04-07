@@ -28,10 +28,13 @@
      (require 'use-package)
    #+END_SRC
 
-   I don't often use Customize but I do like to have my Custom options in their own tidy file.
+   I don't often use Customize but I do like to have my Custom options in their own tidy file.  Also load secrets.el if it exists, for configuration that I don't want in source control.
    #+BEGIN_SRC emacs-lisp
      (setq custom-file "~/.emacs.d/custom.el")
      (load custom-file)
+
+     (when (file-exists-p (expand-file-name "secrets.el" user-emacs-directory))
+       (load-file (expand-file-name "secrets.el" user-emacs-directory)))
    #+END_SRC
 
    Dear emacs, stop littering my damn filesystem with ~files everywhere.
@@ -87,12 +90,7 @@
 
    If you're like me and get anal-retentive about having, say, the "working buffer" on the top, or the left, and your buffer that you're referencing on the right/bottom, then transpose-frame is for you.  Relevant commands are M-x flip-frame for vertical and M-x flop-frame for horizontal flipping.
    #+BEGIN_SRC emacs-lisp
-     (use-package transpose-frame
-       :config
-       (global-set-key (kbd "C-c t") 'transpose-frame)
-       (global-set-key (kbd "C-c o") 'flop-frame)
-       (global-set-key (kbd "C-c i") 'flip-frame)
-       (global-set-key (kbd "C-c r") 'rotate-frame-clockwise))
+     (use-package transpose-frame)
    #+END_SRC
 
    There's also a handy setting to convert yes/no prompts to y/n prompts:
@@ -105,31 +103,21 @@
      (use-package parrot
        :if window-system
        :config
-       (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
-       (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
        (parrot-mode))
    #+end_src
    
    Smart M-x aka smex:
    #+BEGIN_SRC emacs-lisp
-     (use-package smex
-       :config
-       (global-set-key (kbd "M-x") 'smex)
-       (global-set-key (kbd "M-X") 'smex-major-mode-commands)
-       ;; This is your old M-x.
-       (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command))
+     (use-package smex)
    #+END_SRC
 
-   Other miscellaneous keybinds and settings:
+   Other settings:
    #+BEGIN_SRC emacs-lisp
-     (global-set-key (kbd "C-c g") 'rgrep)
-     (global-set-key (kbd "C-c q") 'query-replace)
-     (global-set-key (kbd "C-c x") 'query-replace-regexp)
-     (global-set-key (kbd "C-c d") 'lsp-find-definition)
-
      ;; for clarity: this is regex; \. and \' are escapes because . and ' have special meaning in regex
      (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode))
    #+END_SRC
+
+
 
 ** Visual configuration/Theming
    Emacs is actually quite ugly by default so let's address that by removing the hideous toolbar icons.
@@ -152,7 +140,8 @@
        (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
        (load-theme 'vscode-dark-plus t))
 
-     (use-package all-the-icons)
+     (use-package all-the-icons
+       :if (display-graphic-p))
    #+END_SRC
 
    And I hate that emacs beeps at you all the time, so I'd rather it STFU and flash the modeline at me:
@@ -308,7 +297,7 @@
        :init
        (add-hook 'text-mode-hook (lambda ()
 				   (olivetti-mode 1)
-				   (olivetti-set-width 120)
+				   (olivetti-set-width 140)
 				   (variable-pitch-mode 1))))
    #+END_SRC
 
@@ -324,3 +313,27 @@
 				    (TeX-fold-mode 1)
 				    (TeX-PDF-mode 1))))
    #+END_SRC
+
+** Keybinds
+
+   I decided to collect all my custom keybinds into one section here at the end for easy management:
+   #+begin_src emacs-lisp
+     (global-set-key (kbd "C-c d") 'lsp-find-definition)
+     (global-set-key (kbd "C-c g") 'rgrep)
+
+     (global-set-key (kbd "C-c i") 'flip-frame)
+     (global-set-key (kbd "C-c o") 'flop-frame)
+     (global-set-key (kbd "C-c r") 'rotate-frame-clockwise)
+     (global-set-key (kbd "C-c t") 'transpose-frame)
+
+     (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
+     (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
+
+     (global-set-key (kbd "C-c q") 'query-replace)
+     (global-set-key (kbd "C-c x") 'query-replace-regexp)
+
+     (global-set-key (kbd "M-x") 'smex)
+     (global-set-key (kbd "M-X") 'smex-major-mode-commands)
+     ;; This is your old M-x.
+     (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+   #+end_src
