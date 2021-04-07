@@ -6,18 +6,27 @@
 # the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
 
 * About this file
-  This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.
+  This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.  I thought my config was pretty extensive until I saw Sacha Chua's, so it turns out I'm actually somewhat of a minimalist.  My philosophy is to make few changes, only when there's a clear value-add.
 
-* Praise
-  #+begin_quote
-  I love that your emacs is on way more steroids than my emacs.  If I showed you my init file you'd be embarassed
-  -- admax88
-  #+end_quote
+  Caveat:  I primarily use emacs on macOS using the railwaycat fork, so your mileage may vary.
 
-* Configuration
-  This is my emacs configuration repository.  I try to manage everything with use-package, and I don't typically run via an emacs daemon.  Caveat:  This config is targeted at macOS, using the railwaycat fork of emacs.  Your mileage may vary if you adapt this for linux, etc.
+** Infrastructure
+   First set the package archives.  I use MELPA as well as the Org-specific repository, so we'll set those.  I prefer use-package to el-get or straight.el so that's what I happen to use.
+   
+   #+BEGIN_SRC emacs-lisp
+	(setq package-archives '(("MELPA" . "https://melpa.org/packages/")
+				 ("GNU" . "https://elpa.gnu.org/packages/")
+				 ("org" . "http://orgmode.org/elpa/")))
+	(package-initialize)
 
-** Miscellaneous setup options and fixes
+	(unless (package-installed-p 'use-package)
+	  (package-refresh-contents)
+	  (package-install 'use-package))
+	(setq use-package-verbose t)
+	(setq use-package-always-ensure t)
+	(require 'use-package)
+   #+END_SRC
+
    I don't often use Customize but I do like to have my Custom options in their own tidy file.
    #+BEGIN_SRC emacs-lisp
      (setq custom-file "~/.emacs.d/custom.el")
@@ -42,71 +51,12 @@
 		       week))
 	   (message "%s" file)
 	   (delete-file file))))
-
-
    #+END_SRC
 
-** Package management
-   My understanding is that this is required before we do any package configuration whatsoever.
-   #+BEGIN_SRC emacs-lisp
-     (require 'package)
-   #+END_SRC
-
-   Now set the package archives.  I use MELPA as well as the Org-specific repository.  
-   #+BEGIN_SRC emacs-lisp
-     (setq package-archives '(("MELPA" . "https://melpa.org/packages/")
-			      ("GNU" . "https://elpa.gnu.org/packages/")
-			      ("org" . "http://orgmode.org/elpa/")))
-     (package-initialize)
-   #+END_SRC
-
-   I also like "use-package" so we'll require that.
-   #+BEGIN_SRC emacs-lisp
-     (eval-when-compile
-       (require 'use-package))
-   #+END_SRC
-
-** Visual configuration
-   Emacs is actually quite ugly by default so let's address that by removing the hideous toolbar icons.
-   #+BEGIN_SRC emacs-lisp
-     (column-number-mode t)
-     (if window-system
-	 (progn
-	   (tool-bar-mode -1)
-	   (scroll-bar-mode -1)))
-   #+END_SRC
-
-   I'm currently shopping for a new daily-driver theme but base16 just wasn't readable enough for me on dark backgrounds.  The contrast, especially in code comments, was just too low and I ended up having to crank the display brightness way up which defeats the point.  I'm temporarily settled on solarzed-dark.
-   #+BEGIN_SRC emacs-lisp
-     (use-package vscode-dark-plus-theme
-       :if window-system
-       :ensure t
-       :config
-       (set-face-attribute 'default nil :family "Monaco")
-       (set-face-attribute 'fixed-pitch nil :family "Monaco")
-       (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
-       (load-theme 'vscode-dark-plus t))
-   #+END_SRC
-
-   All-the-icons has some great content:
-   #+BEGIN_SRC emacs-lisp
-     (use-package all-the-icons
-       :ensure t)
-   #+END_SRC
-
-   And I hate that emacs beeps at you all the time, so I'd rather it STFU and flash the modeline at me:
-   #+BEGIN_SRC emacs-lisp
-     (use-package mode-line-bell
-       :ensure t
-       :config (mode-line-bell-mode))
-   #+END_SRC
-
-** Infrastructure
-   Ensure graphical emacs picks up the same environment variables as the shell.  Copy values of other environment variables by customizing exec-path-from-shell-variables before invoking exec-path-from-shell-initialize, or by calling exec-path-from-shell-copy-env, e.g.: (exec-path-from-shell-copy-env "PYTHONPATH")
+      Ensures graphical emacs picks up the same environment variables as the shell.  Copy values of other environment variables by customizing exec-path-from-shell-variables before invoking exec-path-from-shell-initialize, or by calling exec-path-from-shell-copy-env, e.g.: (exec-path-from-shell-copy-env "PYTHONPATH")
    #+BEGIN_SRC emacs-lisp
      (use-package exec-path-from-shell
        :if (memq window-system '(mac ns x))
-       :ensure t
        :config
        (exec-path-from-shell-initialize))
    #+END_SRC
@@ -127,7 +77,6 @@
    Then we can stuff it into the dashboard.  In the future I plan to have the cow give me fortune-cookie wisdom when I launch emacs.
    #+BEGIN_SRC emacs-lisp
      (use-package dashboard
-       :ensure t
        :config
        (dashboard-setup-startup-hook)
        (setq dashboard-banner-logo-title "Welcome Hackerman")
@@ -138,7 +87,6 @@
    If you're like me and get anal-retentive about having, say, the "working buffer" on the top, or the left, and your buffer that you're referencing on the right/bottom, then transpose-frame is for you.  Relevant commands are M-x flip-frame for vertical and M-x flop-frame for horizontal flipping.
    #+BEGIN_SRC emacs-lisp
      (use-package transpose-frame
-       :ensure t
        :config
        (global-set-key (kbd "C-c t") 'transpose-frame)
        (global-set-key (kbd "C-c o") 'flop-frame)
@@ -155,7 +103,6 @@
    #+begin_src emacs-lisp
      (use-package parrot
        :if window-system
-       :ensure t
        :config
        (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
        (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
@@ -165,7 +112,6 @@
    Smart M-x aka smex:
    #+BEGIN_SRC emacs-lisp
      (use-package smex
-       :ensure t
        :config
        (global-set-key (kbd "M-x") 'smex)
        (global-set-key (kbd "M-X") 'smex-major-mode-commands)
@@ -184,15 +130,41 @@
      (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode))
    #+END_SRC
 
-   #+RESULTS:
-   : query-replace-regexp
+** Visual configuration/Theming
+   Emacs is actually quite ugly by default so let's address that by removing the hideous toolbar icons.
+   #+BEGIN_SRC emacs-lisp
+     (column-number-mode t)
+     (if window-system
+	 (progn
+	   (tool-bar-mode -1)
+	   (scroll-bar-mode -1)))
+   #+END_SRC
+
+   I shopped around for themes quite a lot before settling on the vscode-dark+ theme.  It feels a little dirty to use a vscode theme but it's actually visually quite pleasing, and solarized-dark didn't have enough contrast.  Base16 was good but ultimately I just didn't like it as much as the vscode theme.
+   
+   #+BEGIN_SRC emacs-lisp
+     (use-package vscode-dark-plus-theme
+	    :if window-system
+	    :config
+	    (set-face-attribute 'default nil :family "Monaco")
+	    (set-face-attribute 'fixed-pitch nil :family "Monaco")
+	    (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
+	    (load-theme 'vscode-dark-plus t))
+
+     (use-package all-the-icons)
+   #+END_SRC
+
+   And I hate that emacs beeps at you all the time, so I'd rather it STFU and flash the modeline at me:
+   #+BEGIN_SRC emacs-lisp
+     (use-package mode-line-bell
+       :config (mode-line-bell-mode))
+   #+END_SRC
 
 ** Editing
    First things first, Language-Server Protocol has deprecated a lot of previously-indispensable infrastructure so let's get that going:
 
    #+begin_src emacs-lisp
      (use-package lsp-mode
-       :ensure t
        :init
        ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
        (setq lsp-keymap-prefix "C-c l")
@@ -203,35 +175,29 @@
        :commands lsp)
 
      (use-package lsp-ui
-       :ensure t
        :commands lsp-ui-mode)
 
      (use-package flycheck
-       :ensure t
        :init (global-flycheck-mode))
 
      (use-package lsp-treemacs
-       :ensure t
        :commands lsp-treemacs-errors-list)
 
    #+end_src
+   
    I prefer company-mode for completion
    #+BEGIN_SRC emacs-lisp
-	  (use-package company
-	    :ensure t
-	    :mode "company-mode")
-	    
+     (use-package company
+       :hook (init-mode-hook . global-company-mode)
+       :mode "company-mode")
+
      (use-package company-box
-       :ensure t
        :hook (company-mode . company-box-mode))
    #+END_SRC
 
    SLY is a fork of SLIME, the Superior Lisp Interaction Mode for Emacs, which has a more modern REPL and is more actively developed.  Works with company mode out of the box.
    #+BEGIN_SRC emacs-lisp
      (use-package sly
-       :ensure t
-       :init
-       (add-hook 'lisp-mode-hook #'company-mode)
        :config
        (setq inferior-lisp-program "sbcl"))
    #+END_SRC
@@ -240,7 +206,6 @@
    #+BEGIN_SRC emacs-lisp
      (use-package paredit
        :mode "paredit-mode"
-       :ensure t
        :commands enable-paredit-mode
        :init
        (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
@@ -255,14 +220,12 @@
    #+BEGIN_SRC emacs-lisp
      (use-package rainbow-delimiters
        :mode "rainbow-delimiters-mode"
-       :ensure t
        :commands rainbow-delimiters-mode)
    #+END_SRC
 
    #+BEGIN_SRC emacs-lisp
      (use-package rainbow-blocks
        :mode "rainbow-blocks-mode"
-       :ensure t
        :init
        (add-hook 'lisp-mode-hook #'rainbow-blocks-mode)
        (add-hook 'emacs-lisp-mode-hook #'rainbow-blocks-mode))
@@ -271,29 +234,27 @@
    Markdown-mode provides a major mode for markdown as well as github-flavoured markdown
    #+BEGIN_SRC emacs-lisp
      (use-package markdown-mode
-       :ensure t
        :commands (markdown-mode gfm-mode)
        :mode (("README\\.md\\'" . gfm-mode)
 	      ("\\.md\\'" . markdown-mode)
 	      ("\\.markdown\\'" . markdown-mode))
        :init (setq markdown-command "multimarkdown"))
+
+     (use-package web-mode)
+
    #+END_SRC
 
    I also contribute to a rather large project written in C#, so I require csharp-mode which isn't built-in.  
    #+BEGIN_SRC emacs-lisp
      (use-package csharp-mode
-       :ensure t
        :init
-       (add-hook 'csharp-mode-hook #'company-mode)
        (add-hook 'csharp-mode-hook #'rainbow-delimiters-mode))
 
-        #+END_SRC
+   #+END_SRC
 
    And of course what .emacs is complete without projectile?
    #+BEGIN_SRC emacs-lisp
-     (use-package projectile
-       :ensure t)
-
+     (use-package projectile)
    #+end_src
 
    I recently have begun tinkering with some old Raspberry Pi and Beaglebone single-board computers that I have lying around.  I'd normally prefer to work in Lisp but the library support for e.g. GPIO just isn't there, and Python remains the lingua franca of the Raspberry Pi world.
@@ -301,19 +262,15 @@
    Therefore:
 
    #+Begin_src emacs-lisp
-     (use-package python
-	    :ensure t
-	    :config
-	    (add-hook 'python-mode-hook #'company-mode))
+     (use-package python)
 
      (use-package lsp-python-ms
-       :ensure t
        :after (lsp-mode python)
        :init (setq lsp-python-ms-auto-install-server t))
 
    #+end_src
    
-** Org
+** Org and LaTeX
    The org folks have their own ELPA repository, but since emacs has a built-in org version that is usually older than current, the only way I have found to force install of the org-elpa version is to ensure org-plus-contrib is also installed.
    #+BEGIN_SRC emacs-lisp
      (use-package org
@@ -335,35 +292,26 @@
        (setf org-html-postamble nil))
 
      (use-package org-bullets
-       :ensure t
        :init
        (add-hook 'org-mode-hook (lambda ()
 				  (org-bullets-mode 1))))
 
-     (use-package ox-rfc
-       :ensure t)
-
-     (use-package gnuplot-mode
-       :ensure t)
-
-     (use-package ein
-       :ensure t)
+     (use-package ox-rfc)
+     (use-package gnuplot-mode)
+     (use-package ein)
    #+END_SRC
 
    For text editing and writing prose, I like to use Olivetti mode which centres the buffer contents, and variable-pitch-mode which makes emacs look a lot more modern.
    #+BEGIN_SRC emacs-lisp
      (use-package olivetti
-       :ensure t
        :init
        (add-hook 'text-mode-hook (lambda ()
 				   (olivetti-mode 1)
 				   (olivetti-set-width 120)
 				   (variable-pitch-mode 1))))
    #+END_SRC
-** Latex and friends
 
-   I use Auctex like most people probably do.
-
+   I find it's approximately 109812039823 times more convenient to use org-export or pandoc to leverage TeX and friends, but when I do have to write TeX directly I use Auctex for like most people probably do.
    #+BEGIN_SRC emacs-lisp
      (use-package tex
        :ensure auctex
