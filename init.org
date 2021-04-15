@@ -101,7 +101,7 @@
    I want a dank-ass parrot helping me out:
    #+begin_src emacs-lisp
      (use-package parrot
-       :if window-system
+       :if (display-graphic-p)
        :config
        (parrot-mode))
    #+end_src
@@ -123,8 +123,9 @@
    Emacs is actually quite ugly by default so let's address that by removing the hideous toolbar icons.
    #+BEGIN_SRC emacs-lisp
      (column-number-mode t)
-     (if window-system
+     (if (display-graphic-p)
 	 (progn
+	   (menu-bar-mode -1)
 	   (tool-bar-mode -1)
 	   (scroll-bar-mode -1)))
    #+END_SRC
@@ -133,7 +134,7 @@
    
    #+BEGIN_SRC emacs-lisp
      (use-package vscode-dark-plus-theme
-       :if window-system
+       :if (display-graphic-p)
        :config
        (set-face-attribute 'default nil :family "Monaco")
        (set-face-attribute 'fixed-pitch nil :family "Monaco")
