@@ -125,7 +125,6 @@
      (column-number-mode t)
      (if (display-graphic-p)
 	 (progn
-	   (menu-bar-mode -1)
 	   (tool-bar-mode -1)
 	   (scroll-bar-mode -1)))
    #+END_SRC
@@ -179,8 +178,7 @@
    I prefer company-mode for completion
    #+BEGIN_SRC emacs-lisp
      (use-package company
-       :hook (init-mode-hook . global-company-mode)
-       :mode "company-mode")
+       :config (global-company-mode t))
 
      (use-package company-box
        :hook (company-mode . company-box-mode))
