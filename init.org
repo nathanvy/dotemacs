@@ -83,6 +83,7 @@
      (use-package dashboard
        :config
        (dashboard-setup-startup-hook)
+       (setq dashboard-items '((recents . 10) (bookmarks . 10)))
        (setq dashboard-banner-logo-title "Welcome Hackerman")
        (setq recentf-exclude '("bookmarks"))
        (setq dashboard-startup-banner "~/.emacs.d/dashboard-logo.png"))
@@ -158,35 +159,39 @@
        :init
        ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
        (setq lsp-keymap-prefix "C-c l")
-       :hook ((csharp-mode . lsp)
+       :hook ((go-mode . (lambda ()
+			   (lsp-go-install-save-hooks)
+			   (lsp)))
+	      (csharp-mode . lsp)
 	      (python-mode . (lambda ()
 			       (require 'lsp-python-ms)
 			       (lsp))))
-       :commands lsp)
-
+       :commands lsp lsp-deferred)
+     
      (use-package lsp-ui
        :commands lsp-ui-mode)
-
+     
      (use-package flycheck
        :init (global-flycheck-mode))
-
+     
      (use-package lsp-treemacs
        :commands lsp-treemacs-errors-list)
-
-   #+end_src
+     
+       #+end_src
    
    I prefer company-mode for completion
    #+BEGIN_SRC emacs-lisp
      (use-package company
-       :config (global-company-mode t))
-
+       :hook (prog-mode . company-mode))
+     
      (use-package company-box
        :hook (company-mode . company-box-mode))
    #+END_SRC
 
    SLY is a fork of SLIME, the Superior Lisp Interaction Mode for Emacs, which has a more modern REPL and is more actively developed.  Works with company mode out of the box.
    #+BEGIN_SRC emacs-lisp
-     (use-package sly
+     (use-package slime
+       :hook (lisp-mode . slime-mode)
        :config
        (setq inferior-lisp-program "sbcl"))
    #+END_SRC
@@ -228,9 +233,9 @@
 	      ("\\.md\\'" . markdown-mode)
 	      ("\\.markdown\\'" . markdown-mode))
        :init (setq markdown-command "multimarkdown"))
-
+     
      (use-package web-mode)
-
+     
    #+END_SRC
 
    I also contribute to a rather large project written in C#, so I require csharp-mode which isn't built-in.  
@@ -238,7 +243,7 @@
      (use-package csharp-mode
        :init
        (add-hook 'csharp-mode-hook #'rainbow-delimiters-mode))
-
+     
    #+END_SRC
 
    And of course what .emacs is complete without projectile?
@@ -252,11 +257,21 @@
 
    #+Begin_src emacs-lisp
      (use-package python)
-
+     
      (use-package lsp-python-ms
        :after (lsp-mode python)
        :init (setq lsp-python-ms-auto-install-server t))
+     
+   #+end_src
 
+   For hacking around with Go (golang) I decided to embrace lsp-mode rather than eglot.  First I'll define this function as recommended in the golang/lsp docs and it gets called somewhere up above in the incantations for LSP mode.
+   
+   #+begin_src emacs-lisp
+     (defun lsp-go-install-save-hooks ()
+       (add-hook 'before-save-hook #'lsp-format-buffer t t)
+       (add-hook 'before-save-hook #'lsp-organize-imports t t))
+     
+     (use-package go-mode)
    #+end_src
    
 ** Org and LaTeX
@@ -279,12 +294,12 @@
        (set-face-attribute 'org-block-end-line nil :slant 'normal :overline nil :extend nil)
        (setf org-html-preamble nil)
        (setf org-html-postamble nil))
-
+     
      (use-package org-bullets
        :init
        (add-hook 'org-mode-hook (lambda ()
 				  (org-bullets-mode 1))))
-
+     
      (use-package ox-rfc)
      (use-package gnuplot-mode)
      (use-package ein)
@@ -317,20 +332,23 @@
 
    I decided to collect all my custom keybinds into one section here at the end for easy management:
    #+begin_src emacs-lisp
+     (global-set-key (kbd "M-n") 'company-select-next)
+     (global-set-key (kbd "M-p") 'company-select-previous)
+     
      (global-set-key (kbd "C-c d") 'lsp-find-definition)
      (global-set-key (kbd "C-c g") 'rgrep)
-
+     
      (global-set-key (kbd "C-c i") 'flip-frame)
      (global-set-key (kbd "C-c o") 'flop-frame)
      (global-set-key (kbd "C-c r") 'rotate-frame-clockwise)
      (global-set-key (kbd "C-c t") 'transpose-frame)
-
+     
      (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
      (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
-
+     
      (global-set-key (kbd "C-c q") 'query-replace)
      (global-set-key (kbd "C-c x") 'query-replace-regexp)
-
+     
      (global-set-key (kbd "M-x") 'smex)
      (global-set-key (kbd "M-X") 'smex-major-mode-commands)
      ;; This is your old M-x.
