@@ -19,7 +19,7 @@
 			      ("GNU" . "https://elpa.gnu.org/packages/")
 			      ("org" . "http://orgmode.org/elpa/")))
      (package-initialize)
-
+     
      (unless (package-installed-p 'use-package)
        (package-refresh-contents)
        (package-install 'use-package))
@@ -32,20 +32,20 @@
    #+BEGIN_SRC emacs-lisp
      (setq custom-file "~/.emacs.d/custom.el")
      (load custom-file)
-
+     
      (when (file-exists-p (expand-file-name "secrets.el" user-emacs-directory))
        (load-file (expand-file-name "secrets.el" user-emacs-directory)))
    #+END_SRC
 
    Dear emacs, stop littering my damn filesystem with ~files everywhere.
    #+BEGIN_SRC emacs-lisp
-
+     
      (setq temporary-file-directory "~/.emacs.d/saves")
      (setq backup-directory-alist
 	   `((".*" . ,temporary-file-directory)))
      (setq auto-save-file-name-transforms
 	   `((".*" ,temporary-file-directory t)))
-
+     
      (message "Deleting old backup files...")
      (let ((week (* 60 60 24 7))
 	   (current (float-time (current-time))))
@@ -140,7 +140,7 @@
        (set-face-attribute 'fixed-pitch nil :family "Monaco")
        (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
        (load-theme 'vscode-dark-plus t))
-
+     
      (use-package all-the-icons
        :if (display-graphic-p))
    #+END_SRC
@@ -177,7 +177,7 @@
      (use-package lsp-treemacs
        :commands lsp-treemacs-errors-list)
      
-       #+end_src
+   #+end_src
    
    I prefer company-mode for completion
    #+BEGIN_SRC emacs-lisp
@@ -187,6 +187,17 @@
      (use-package company-box
        :hook (company-mode . company-box-mode))
    #+END_SRC
+
+   Recently I started writing a lot of Go (golang) and there's an awful lot of repetitive error checking when trying to follow the idiomatic style.  I got annoyed at writing the same if construct hundreds of times so I decided it was finally time to install yasnippet.  It comes with ~TAB~ bound to ~yas-expand~ by default which I don't like, so I moved it to a global keymap elsewhere in this file.
+
+   #+begin_src emacs-lisp
+     (use-package yasnippet
+       :init
+       (yas-global-mode)
+       (define-key yas-minor-mode-map (kbd "<tab>") nil)
+       (define-key yas-minor-mode-map (kbd "TAB") nil))
+     
+   #+end_src
 
    SLY is a fork of SLIME, the Superior Lisp Interaction Mode for Emacs, which has a more modern REPL and is more actively developed.  Works with company mode out of the box.
    #+BEGIN_SRC emacs-lisp
@@ -271,7 +282,8 @@
        (add-hook 'before-save-hook #'lsp-format-buffer t t)
        (add-hook 'before-save-hook #'lsp-organize-imports t t))
      
-     (use-package go-mode)
+     (use-package go-mode
+       :init (add-hook 'go-mode-hook #'rainbow-delimiters-mode))
    #+end_src
    
 ** Org and LaTeX
@@ -342,6 +354,8 @@
      (global-set-key (kbd "C-c o") 'flop-frame)
      (global-set-key (kbd "C-c r") 'rotate-frame-clockwise)
      (global-set-key (kbd "C-c t") 'transpose-frame)
+     
+     (global-set-key (kbd "C-c y") 'yas-expand)
      
      (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
      (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
