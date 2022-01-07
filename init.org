@@ -1,4 +1,4 @@
-#+TITILE: My Emacs configuration
++TITILE: My Emacs configuration
 #+AUTHOR: Nathan Van Ymeren
 #+STARTUP: showeverything
 #+STARTUP: inlineimages
@@ -124,6 +124,7 @@
    Emacs is actually quite ugly by default so let's address that by removing the hideous toolbar icons.
    #+BEGIN_SRC emacs-lisp
      (column-number-mode t)
+     (show-paren-mode t)
      (if (display-graphic-p)
 	 (progn
 	   (tool-bar-mode -1)
@@ -183,9 +184,6 @@
    #+BEGIN_SRC emacs-lisp
      (use-package company
        :hook (prog-mode . company-mode))
-     
-     (use-package company-box
-       :hook (company-mode . company-box-mode))
    #+END_SRC
 
    Recently I started writing a lot of Go (golang) and there's an awful lot of repetitive error checking when trying to follow the idiomatic style.  I got annoyed at writing the same if construct hundreds of times so I decided it was finally time to install yasnippet.  It comes with ~TAB~ bound to ~yas-expand~ by default which I don't like, so I moved it to a global keymap elsewhere in this file.
@@ -201,8 +199,7 @@
 
    SLY is a fork of SLIME, the Superior Lisp Interaction Mode for Emacs, which has a more modern REPL and is more actively developed.  Works with company mode out of the box.
    #+BEGIN_SRC emacs-lisp
-     (use-package slime
-       :hook (lisp-mode . slime-mode)
+     (use-package sly
        :config
        (setq inferior-lisp-program "sbcl"))
    #+END_SRC
@@ -221,19 +218,18 @@
        (add-hook 'scheme-mode-hook #'enable-paredit-mode))
    #+END_SRC
 
-   Rainbow delimeters makes it easier to judge what's nested inside what, but for lisp I like rainbow-blocks which highlights based on scope rather than syntax:
+   Prism mode for syntax highlighting:
    #+BEGIN_SRC emacs-lisp
-     (use-package rainbow-delimiters
-       :mode "rainbow-delimiters-mode"
-       :commands rainbow-delimiters-mode)
-   #+END_SRC
-
-   #+BEGIN_SRC emacs-lisp
-     (use-package rainbow-blocks
-       :mode "rainbow-blocks-mode"
+     (use-package prism
+       :commands prism-mode
        :init
-       (add-hook 'lisp-mode-hook #'rainbow-blocks-mode)
-       (add-hook 'emacs-lisp-mode-hook #'rainbow-blocks-mode))
+       (add-hook 'lisp-mode-hook #'prism-mode)
+       (add-hook 'emacs-lisp-mode-hook #'prism-mode)
+       :config
+	(prism-set-colors :num 24
+	  :desaturations '(0 5 10)
+	  :lightens '(30 40 50)
+	  :colors (list "#ec423a" "#db5823" "#c49619" "#93a61a" "#3c98e0" "#3cafa5" "#7a7ed2" "#e2468f")))
    #+END_SRC
 
    Markdown-mode provides a major mode for markdown as well as github-flavoured markdown
