@@ -11,15 +11,15 @@
   Caveat:  I primarily use emacs on macOS using the railwaycat fork, so your mileage may vary.
 
 ** Infrastructure
-   First enable lexical binding, then set the package archives.  I use MELPA as well as the Org-specific repository, so we'll set those.  I prefer use-package to el-get or straight.el so that's what I happen to use.
+   First enable lexical binding, then set the package archives.  I use MELPA and until org version 9.5 I used the org-mode specific repository, however it has been deprecated at the time of this writing.  I prefer use-package over el-get or straight.el so that's what I happen to use, but those are perfectly fine alternatives and YMMV.
    
    #+BEGIN_SRC emacs-lisp
      ;; -*- lexical-binding: t -*-
-     (setq package-archives '(("MELPA" . "https://melpa.org/packages/")
-			      ("GNU" . "https://elpa.gnu.org/packages/")
-			      ("org" . "http://orgmode.org/elpa/")))
+     (setq package-archives '(("melpa" . "https://melpa.org/packages/")
+			      ("nongnu" . "https://elpa.nongnu.org/nongnu/")
+			      ("gnu" . "https://elpa.gnu.org/packages/")))
      (package-initialize)
-     
+
      (unless (package-installed-p 'use-package)
        (package-refresh-contents)
        (package-install 'use-package))
@@ -286,7 +286,6 @@
    The org folks have their own ELPA repository, but since emacs has a built-in org version that is usually older than current, the only way I have found to force install of the org-elpa version is to ensure org-plus-contrib is also installed.
    #+BEGIN_SRC emacs-lisp
      (use-package org
-       :ensure org-plus-contrib
        :init
        (setf org-list-allow-alphabetical t)
        (setf org-src-tab-acts-natively t)
@@ -302,12 +301,12 @@
        (set-face-attribute 'org-block-end-line nil :slant 'normal :overline nil :extend nil)
        (setf org-html-preamble nil)
        (setf org-html-postamble nil))
-     
+
      (use-package org-bullets
        :init
        (add-hook 'org-mode-hook (lambda ()
 				  (org-bullets-mode 1))))
-     
+
      (use-package ox-rfc)
      (use-package gnuplot-mode)
      (use-package ein)
