@@ -1,4 +1,4 @@
-+TITILE: My Emacs configuration
+#+TITILE: My Emacs configuration
 #+AUTHOR: Nathan Van Ymeren
 #+STARTUP: showeverything
 #+STARTUP: inlineimages
@@ -94,9 +94,9 @@
      (use-package transpose-frame)
    #+END_SRC
 
-   There's also a handy setting to convert yes/no prompts to y/n prompts:
+Prior to v28, there's a handy setting to convert yes/no prompts to y/n prompts, using fset, however now we can:
    #+BEGIN_SRC emacs-lisp
-     (fset 'yes-or-no-p 'y-or-n-p)
+     (setq use-short-answers t)
    #+END_SRC
 
    I want a dank-ass parrot helping me out:
@@ -131,16 +131,16 @@
 	   (scroll-bar-mode -1)))
    #+END_SRC
 
-   I shopped around for themes quite a lot before settling on the vscode-dark+ theme.  It feels a little dirty to use a vscode theme but it's actually visually quite pleasing, and solarized-dark didn't have enough contrast.  Base16 was good but ultimately I just didn't like it as much as the vscode theme.
+   I shopped around for themes quite a lot before settling on the vscode-dark+ theme, which I really liked.  It felt a little dirty to use a vscode theme but it's actually visually quite pleasing, and solarized-dark didn't have enough contrast.  Base16 was good but ultimately I just didn't like it as much as the vscode theme.  However, we synthwave now.
    
    #+BEGIN_SRC emacs-lisp
-     (use-package vscode-dark-plus-theme
+     (use-package doom-themes
        :if (display-graphic-p)
        :config
        (set-face-attribute 'default nil :family "Monaco")
        (set-face-attribute 'fixed-pitch nil :family "Monaco")
        (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
-       (load-theme 'vscode-dark-plus t))
+       (load-theme 'doom-laserwave t))
      
      (use-package all-the-icons
        :if (display-graphic-p))
