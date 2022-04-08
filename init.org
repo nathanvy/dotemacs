@@ -140,8 +140,9 @@ Prior to v28, there's a handy setting to convert yes/no prompts to y/n prompts, 
        (set-face-attribute 'default nil :family "Monaco")
        (set-face-attribute 'fixed-pitch nil :family "Monaco")
        (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
-       (load-theme 'doom-laserwave t))
-     
+       (set-face-attribute 'show-paren-match nil :foreground "#131033" :background "#e61f44")
+       (load-theme 'doom-outrun-electric t))
+
      (use-package all-the-icons
        :if (display-graphic-p))
    #+END_SRC
