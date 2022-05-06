@@ -140,7 +140,7 @@ I shopped around for themes quite a lot before settling on the vscode-dark+ them
     (set-face-attribute 'default nil :family "Monaco")
     (set-face-attribute 'fixed-pitch nil :family "Monaco")
     (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
-    (set-face-attribute 'show-paren-match nil :foreground "#a875ff" :background "#ff2afc")
+    (set-face-attribute 'show-paren-match nil :foreground "#ffffff" :background "#ff2afc")
     (load-theme 'doom-outrun-electric t))
 
   (use-package all-the-icons
