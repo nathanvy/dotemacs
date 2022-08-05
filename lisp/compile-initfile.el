@@ -1,2 +1,2 @@
 (require 'org)
-(org-babel-tangle-file "init.org")
+(org-babel-tangle-file "README.org")

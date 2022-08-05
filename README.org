@@ -1,0 +1,338 @@
+#+:TITLE: My emacs config
+#+:AUTHOR: Nathan Van Ymeren
+#+STARTUP: showeverything
+#+STARTUP: inlineimages
+#+PROPERTY: header-args :tangle yes
+# the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
+
+Here is my configuration for the almighty emacs editor.  I used to think it was long and comprehensive until I saw [[https://sachachua.com/dotemacs][some of the more prolific configs]] that abound, but I've been using emacs for many years and this works for me.  The vast majority of my config is just loading packages for working with various programming languages, et cetera, but there are some tweaks included herein.
+
+* About this file
+This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.  I thought my config was pretty extensive until I saw Sacha Chua's, so it turns out I'm actually somewhat of a minimalist.  My philosophy is to make few changes, only when there's a clear value-add.  This file is the primary configuration artifact and most of the sausage gets made here.  There is also an /early-init/ file that sets a few variables before the package system and GUI are loaded.
+
+Caveat:  I primarily use emacs on macOS using the railwaycat fork, so your mileage may vary.
+
+** Infrastructure
+First enable lexical binding, then set up [[https://github.com/radian-software/straight.el][straight.el]] which is a purely-functional package manager that replaces the built-in ~package.el~ functionality.
+
+#+begin_src emacs-lisp
+   ;;; -*- lexical-binding: t; -*-
+
+  (when (version< emacs-version "27")
+    (error "This emacs requires a min version of 27 but you're running %s" emacs-version))
+
+  (setq user-full-name "Nathan Van Ymeren"
+	user-mail-address "n@0x85.org")
+
+  (setq use-short-answers t)
+  (tool-bar-mode -1)
+
+
+  (defvar bootstrap-version)
+  (let ((bootstrap-file
+	 (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+	(bootstrap-version 5))
+    (unless (file-exists-p bootstrap-file)
+      (with-current-buffer
+	  (url-retrieve-synchronously
+	   "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+	   'silent 'inhibit-cookies)
+	(goto-char (point-max))
+	(eval-print-last-sexp)))
+    (load bootstrap-file nil 'nomessage))
+
+  (setq straight-use-package-by-default t)
+#+end_src
+
+I rarely if ever use ~customize~ but when I do I prefer it to put its mess into its own tidy file.  We also load our secrets that we don't want in source control.  
+#+begin_src emacs-lisp
+  (setq custom-file "~/.emacs.d/custom.el")
+  (load custom-file)
+
+  (when (file-exists-p (expand-file-name "secrets.el" user-emacs-directory))
+    (load-file (expand-file-name "secrets.el" user-emacs-directory)))
+#+end_src
+
+This sets up a centralized location where emacs will leave its temporary files instead of littering our filesystem.
+
+#+begin_src emacs-lisp
+  (setq temporary-file-directory "~/.emacs.d/saves")
+  (setq backup-directory-alist
+	`((".*" . ,temporary-file-directory)))
+  (setq auto-save-file-name-transforms
+	`((".*" ,temporary-file-directory t)))
+
+  (message "Deleting old backup files...")
+  (let ((week (* 60 60 24 7))
+	(current (float-time (current-time))))
+    (dolist (file (directory-files temporary-file-directory t))
+      (when (and (backup-file-name-p file)
+		 (> (- current (float-time (nth 5 (file-attributes file))))
+		    week))
+	(message "%s" file)
+	(delete-file file))))
+#+end_src
+
+There are lots of competing (or perhaps it would be better to say /overlapping/) packages in this space but I like good old ~ido~.  It does what I need.
+
+#+begin_src emacs-lisp
+  (setq ido-enable-flex-matching t)
+  (setq ido-everywhere t)
+  (ido-mode 1)
+#+end_src
+
+** Packages
+First things first we install ~use-package~ which makes for a nice and readable configuration without oodles of calls to ~with-eval-after-load~:
+
+#+begin_src emacs-lisp
+  (straight-use-package 'use-package)
+#+end_src
+
+Now that we're bootstrapped we can start pulling in stuff that we use to get other stuff done.  We'll start with some OS-specific stuff:
+
+#+begin_src emacs-lisp
+  (when (eq system-type 'darwin)
+    (use-package exec-path-from-shell
+      :config
+      (exec-path-from-shell-initialize)))
+  ;;  (when (eq system-type 'gnu/linux))
+
+#+end_src
+
+And some general utility packages.  Transpose-frame lets us move frames around easily, and smex aka Smart M-x makes for a smoother experience.
+
+#+begin_src emacs-lisp
+  (use-package transpose-frame)
+  (use-package smex)
+  (use-package projectile)
+  (use-package neotree)
+#+end_src
+
+*** Visuals
+I stumbled upon Prism mode by accident after much mucking about with rainbow-delimiters and friends.  I've really come to prefer prism for coloring.  I also have decided to go full 80s and load a super dank synthwave type theme.  I shopped around for themes quite a bit because emacs by default is hideous.  I originally settled on the ~vscode-dark+~ theme which I really liked and heartily recommend but sometimes you want to have more fun.  ~Base16~-based themes also get an honorable mention for being good.  Lots of folks use ~solarized~ but I found it didn't have enough contrast for me.
+
+#+begin_src emacs-lisp
+  (column-number-mode t)
+  (show-paren-mode t)
+
+  (use-package doom-themes
+    :if (display-graphic-p)
+    :config
+    (set-face-attribute 'default nil :family "Monaco")
+    (set-face-attribute 'fixed-pitch nil :family "Monaco")
+    (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
+    (set-face-attribute 'show-paren-match nil :foreground "#ffffff" :background "#ff2afc")
+    (load-theme 'doom-outrun-electric t))
+
+  (use-package all-the-icons
+    :if (display-graphic-p))
+
+  (use-package mode-line-bell
+    :config (mode-line-bell-mode))
+
+  (use-package prism
+    :commands prism-mode
+    :init
+    (add-hook 'prog-mode-hook #'prism-mode))
+#+end_src
+
+Parrot Mode needs no introduction, nor no explanation.
+
+#+begin_src emacs-lisp
+  (use-package parrot
+    :if (display-graphic-p)
+    :config (parrot-mode))
+#+end_src
+
+
+*** Language Server Protocol
+Emacs and LSP together make for a fantastic editing experience and has deprecated a lot of previously-indispensable stuff so we'll get it going along with company for completion and tree-sitter for parsing.
+
+#+begin_src emacs-lisp
+  (use-package lsp-mode
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setq lsp-keymap-prefix "C-c l")
+    :hook ((go-mode . (lambda ()
+			(lsp-go-install-save-hooks)
+			(lsp)))
+	   (csharp-mode . lsp)
+	   (web-mode . lsp)
+	   (python-mode . (lambda ()
+			    (require 'lsp-python-ms)
+			    (lsp))))
+    :commands lsp lsp-deferred)
+
+  (use-package lsp-ui
+    :commands lsp-ui-mode)
+
+  (use-package flycheck
+    :init (global-flycheck-mode))
+
+  (use-package lsp-treemacs
+    :commands lsp-treemacs-errors-list)
+
+  (use-package company
+    :hook (prog-mode . company-mode))
+
+  (use-package tree-sitter
+    :config
+    (global-tree-sitter-mode)
+    (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+#+end_src
+
+*** Snippets
+Recently I started writing a lot of Go (golang) and there's an awful lot of repetitive error checking when trying to follow the idiomatic style.  I got annoyed at writing the same if construct hundreds of times so I decided it was finally time to install yasnippet.  It comes with ~TAB~ bound to ~yas-expand~ by default which I don't like, so I disabled it here by setting it to nil, and moved it to a different key combination at the end of this file.
+
+#+begin_src emacs-lisp
+  (use-package yasnippet
+    :init
+    (yas-global-mode)
+    (define-key yas-minor-mode-map (kbd "<tab>") nil)
+    (define-key yas-minor-mode-map (kbd "TAB") nil))
+
+#+end_src
+
+*** Lisp
+I hated lisp at first but I've found that it's really grown on me.  It has its warts but all languages do.  We don't leverage LSP here since most lisp implementations predate Language Servers and provide their own analogous constructs that are more tightly integrated with the REPL anyway.  Sly is a fork of SLIME and is more actively developed.
+
+#+begin_src emacs-lisp
+  (use-package sly
+    :config
+    (setq inferior-lisp-program "sbcl"))
+
+  (use-package paredit
+    :mode "paredit-mode"
+    :commands enable-paredit-mode
+    :init
+    (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
+    (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+    (add-hook 'ielm-mode-hook #'enable-paredit-mode)
+    (add-hook 'lisp-mode-hook #'enable-paredit-mode)
+    (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+    (add-hook 'scheme-mode-hook #'enable-paredit-mode))
+#+end_src
+
+*** Other programming languages
+Most of these are simple invocations of ~use-package~ and require no explanation.
+#+begin_src emacs-lisp
+  (use-package web-mode)
+
+  (use-package csharp-mode
+    :config
+    (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode)))
+
+  (use-package python)
+  (use-package lsp-python-ms
+    :after (lsp-mode python)
+    :init (setq lsp-python-ms-auto-install-server t))
+
+  (defun lsp-go-install-save-hooks ()
+    (add-hook 'before-save-hook #'lsp-format-buffer t t)
+    (add-hook 'before-save-hook #'lsp-organize-imports t t))
+  (use-package go-mode)
+
+#+end_src
+
+
+
+Some generally-useful stuff like Dashboard and package like Org for writing prose:
+
+#+begin_src emacs-lisp
+  (use-package dashboard
+    :config
+    (dashboard-setup-startup-hook)
+    (setq dashboard-items '((recents . 10) (bookmarks . 10)))
+    (setq dashboard-banner-logo-title "Hacks and glory await!")
+    (setq recentf-exclude '("bookmarks"))
+    (setq dashboard-startup-banner "~/.emacs.d/dashboard-logo.png"))
+
+  (use-package org
+    :init
+    (setf org-list-allow-alphabetical t)
+    (setf org-src-tab-acts-natively t)
+    (setf org-startup-truncated nil)
+    :config
+    (org-babel-do-load-languages 'org-babel-load-languages '((lisp . t) (emacs-lisp . t)))
+    (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-code nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-block nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-block-begin-line nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-block-end-line nil :inherit 'fixed-pitch)
+    (set-face-attribute 'org-block-begin-line nil :slant 'normal :underline nil :extend nil)
+    (set-face-attribute 'org-block-end-line nil :slant 'normal :overline nil :extend nil)
+    (setf org-html-preamble nil)
+    (setf org-html-postamble nil))
+
+  (use-package org-bullets
+    :init
+    (add-hook 'org-mode-hook (lambda ()
+			       (org-bullets-mode 1))))
+
+  (use-package ox-rfc)
+
+  (use-package markdown-mode
+    :commands (markdown-mode gfm-mode)
+    :mode (("README\\.md\\'" . gfm-mode)
+	   ("\\.md\\'" . markdown-mode)
+	   ("\\.markdown\\'" . markdown-mode))
+    :init (setq markdown-command "multimarkdown"))
+#+end_src
+
+For writing prose or anything non-code I like to use Olivetti which adds some nice gutters on either side of the screen and pair it with variable pitch fonts.
+
+#+begin_src emacs-lisp
+  (use-package olivetti
+    :init
+    (add-hook 'text-mode-hook (lambda ()
+				(olivetti-mode 1)
+				(olivetti-set-width 140)
+				(variable-pitch-mode 1))))
+#+end_src
+
+I find it's approximately 109812039823 times more convenient to use org-export or pandoc to leverage TeX and friends, but when I do have to write TeX directly I use Auctex for like most people probably do.  Note that if you're not using ~straight~ you should use ~:ensure auctex~ instead.
+
+#+begin_src emacs-lisp
+  (use-package tex
+    :straight auctex
+    :mode
+    ("\\.tex\\'" . LaTeX-mode)
+    :init
+    (add-hook 'LaTeX-mode-hook (lambda ()
+				 (LaTeX-math-mode 1)
+				 (TeX-fold-mode 1)
+				 (TeX-PDF-mode 1))))
+
+  (use-package cdlatex)
+#+end_src
+
+** Keybinds
+
+I decided to collect all my custom keybinds into one section here at the end for easy management:
+#+begin_src emacs-lisp
+  (global-set-key (kbd "M-n") 'company-select-next)
+  (global-set-key (kbd "M-p") 'company-select-previous)
+
+  (global-set-key (kbd "C-c d") 'lsp-find-definition)
+  (global-set-key (kbd "C-c g") 'rgrep)
+
+  (global-set-key (kbd "C-c e") 'neotree-toggle)
+
+  (global-set-key (kbd "C-c i") 'flip-frame)
+  (global-set-key (kbd "C-c o") 'flop-frame)
+  (global-set-key (kbd "C-c r") 'rotate-frame-clockwise)
+  (global-set-key (kbd "C-c t") 'transpose-frame)
+
+  (global-set-key (kbd "C-c y") 'yas-expand)
+
+  (global-set-key (kbd "C-c n") 'parrot-rotate-next-word-at-point)
+  (global-set-key (kbd "C-c p") 'parrot-rotate-prev-word-at-point)
+
+  (global-set-key (kbd "C-c q") 'query-replace)
+  (global-set-key (kbd "C-c x") 'query-replace-regexp)
+
+  (global-set-key (kbd "M-x") 'smex)
+  (global-set-key (kbd "M-X") 'smex-major-mode-commands)
+  ;; This is your old M-x.
+  (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+#+end_src

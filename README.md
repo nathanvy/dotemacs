@@ -1,1 +1,0 @@
-See init.org in this repo
