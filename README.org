@@ -1,16 +1,23 @@
-#+:TITLE: My emacs config
-#+:AUTHOR: Nathan Van Ymeren
+* .emacs.d/*
 #+STARTUP: showeverything
 #+STARTUP: inlineimages
 #+PROPERTY: header-args :tangle yes
 # the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
 
-Here is my configuration for the almighty emacs editor.  I used to think it was long and comprehensive until I saw [[https://sachachua.com/dotemacs][some of the more prolific configs]] that abound, but I've been using emacs for many years and this works for me.  The vast majority of my config is just loading packages for working with various programming languages, et cetera, but there are some tweaks included herein.
+Here is my configuration for the almighty emacs editor.  I used to think it was long and comprehensive until I saw [[https://sachachua.com/dotemacs][some of the more prolific configs]] that abound, so I guess it might be considered somewhat minimalist but I've been using emacs for many years and this works for me.  The vast majority of my config is just loading packages for working with various programming languages, et cetera, but there are some tweaks included herein.  My philosophy is to make few changes, only when there's a clear value-add, and so this file has been built up incrementally over the course of several years.  I believe this is the best way to leverage emacs' strengths and mold it to yourself.  I do not use `vim`-style bindings because I am not a monster.
 
 * About this file
-This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.  I thought my config was pretty extensive until I saw Sacha Chua's, so it turns out I'm actually somewhat of a minimalist.  My philosophy is to make few changes, only when there's a clear value-add.  This file is the primary configuration artifact and most of the sausage gets made here.  There is also an /early-init/ file that sets a few variables before the package system and GUI are loaded.
+This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.  This file is the primary configuration artifact and most of the sausage gets made here.  There is also an /early-init/ file that sets a few variables before the package system and GUI are loaded.
 
-Caveat:  I primarily use emacs on macOS using the railwaycat fork, so your mileage may vary.
+** Usage
+1. Install emacs.  Caveat:  I primarily use emacs on macOS using the railwaycat fork, so your mileage may vary.
+2. 
+#+begin_src shell
+  $ git clone git@github.com:nathanvy/dotemacs.git
+  $ cd .emacs.d/
+  $ make
+#+end_src
+3. Go make an espresso while `straight` bootstraps itself and begins pulling down packages.
 
 ** Infrastructure
 First enable lexical binding, then set up [[https://github.com/radian-software/straight.el][straight.el]] which is a purely-functional package manager that replaces the built-in ~package.el~ functionality.
@@ -106,6 +113,7 @@ And some general utility packages.  Transpose-frame lets us move frames around e
   (use-package smex)
   (use-package projectile)
   (use-package neotree)
+  (use-package magit)
 #+end_src
 
 *** Visuals
@@ -149,36 +157,43 @@ Parrot Mode needs no introduction, nor no explanation.
 Emacs and LSP together make for a fantastic editing experience and has deprecated a lot of previously-indispensable stuff so we'll get it going along with company for completion and tree-sitter for parsing.
 
 #+begin_src emacs-lisp
-  (use-package lsp-mode
-    :init
-    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-    (setq lsp-keymap-prefix "C-c l")
-    :hook ((go-mode . (lambda ()
-			(lsp-go-install-save-hooks)
-			(lsp)))
-	   (csharp-mode . lsp)
-	   (web-mode . lsp)
-	   (python-mode . (lambda ()
-			    (require 'lsp-python-ms)
-			    (lsp))))
-    :commands lsp lsp-deferred)
+      (use-package lsp-mode
+	:init
+	;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+	(setq lsp-keymap-prefix "C-c l")
+	:hook ((go-mode . (lambda ()
+			    (lsp-go-install-save-hooks)
+			    (lsp)))
+	       (csharp-mode . lsp)
+	       (web-mode . lsp)
+	       (js-mode .lsp)
+	       (js-jsx-mode . lsp)
+	       (typescript-mode . lsp)
+	       (c++-mode . lsp)
+	       (python-mode . (lambda ()
+				(require 'lsp-python-ms)
+				(lsp))))
+	:commands lsp lsp-deferred
+	:config
+	(setq lsp-log-io nil))
 
-  (use-package lsp-ui
-    :commands lsp-ui-mode)
+      (use-package lsp-ui
+	:commands lsp-ui-mode)
 
-  (use-package flycheck
-    :init (global-flycheck-mode))
+      (use-package flycheck
+	:init (global-flycheck-mode))
 
-  (use-package lsp-treemacs
-    :commands lsp-treemacs-errors-list)
+      (use-package lsp-treemacs
+	:commands lsp-treemacs-errors-list)
 
-  (use-package company
-    :hook (prog-mode . company-mode))
+      (use-package company
+	:hook (prog-mode . company-mode))
 
-  (use-package tree-sitter
-    :config
-    (global-tree-sitter-mode)
-    (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+      (use-package tree-sitter
+	:config
+	(global-tree-sitter-mode)
+	(add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+      (use-package tree-sitter-langs)
 #+end_src
 
 *** Snippets
@@ -242,7 +257,7 @@ Some generally-useful stuff like Dashboard and package like Org for writing pros
   (use-package dashboard
     :config
     (dashboard-setup-startup-hook)
-    (setq dashboard-items '((recents . 10) (bookmarks . 10)))
+    (setq dashboard-items '((recents . 20) (bookmarks . 20)))
     (setq dashboard-banner-logo-title "Hacks and glory await!")
     (setq recentf-exclude '("bookmarks"))
     (setq dashboard-startup-banner "~/.emacs.d/dashboard-logo.png"))

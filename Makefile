@@ -1,4 +1,4 @@
-default: init.org
+default: README.org
 	@emacs -Q --batch -l 'lisp/compile-initfile.el'
 	mv README.el init.el
 
