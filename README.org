@@ -3,7 +3,7 @@
 #+PROPERTY: header-args :tangle yes
 # the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
 
-* My emacs config
+* Emacs
 Here is my configuration for the almighty emacs editor.  I used to think it was long and comprehensive until I saw [[https://sachachua.com/dotemacs][some of the more prolific configs]] that abound, so I guess it might be considered somewhat minimalist but I've been using emacs for many years and this works for me.  The vast majority of my config is just loading packages for working with various programming languages, et cetera, but there are some tweaks included herein.  My philosophy is to make few changes, only when there's a clear value-add, and so this file has been built up incrementally over the course of several years.  I believe this is the best way to leverage emacs' strengths and mold it to yourself.  I do not use `vim`-style bindings because I am not a monster.
 
 * About this file
@@ -17,7 +17,7 @@ This is a so-called "literate" code file, where the code and its documentation a
   $ cd .emacs.d/
   $ make
 #+end_src
-3. [@3]  Go make an espresso while `straight` bootstraps itself and begins pulling down packages.
+3.  Go make an espresso while `straight` bootstraps itself and begins pulling down packages.
 
 ** Infrastructure
 First enable lexical binding, then set up [[https://github.com/radian-software/straight.el][straight.el]] which is a purely-functional package manager that replaces the built-in ~package.el~ functionality.
@@ -80,14 +80,6 @@ This sets up a centralized location where emacs will leave its temporary files i
 	(delete-file file))))
 #+end_src
 
-There are lots of competing (or perhaps it would be better to say /overlapping/) packages in this space but I like good old ~ido~.  It does what I need.
-
-#+begin_src emacs-lisp
-  (setq ido-enable-flex-matching t)
-  (setq ido-everywhere t)
-  (ido-mode 1)
-#+end_src
-
 ** Packages
 First things first we install ~use-package~ which makes for a nice and readable configuration without oodles of calls to ~with-eval-after-load~:
 
@@ -115,6 +107,18 @@ And some general utility packages.  Transpose-frame lets us move frames around e
   (use-package neotree)
   (use-package magit)
 #+end_src
+
+There are lots of competing (or perhaps it would be better to say /overlapping/) packages in this space but I like good old ~ido~.  It does what I need.  ~ido~ is built in but if you actually set `ido-everywhere = 1` you may discover it's not actually /everywhere/ so we add ~ido-completing-read+~
+
+#+begin_src emacs-lisp
+  (setq ido-enable-flex-matching t)
+  (ido-mode 1)
+  (ido-everywhere 1)
+  (use-package ido-completing-read+
+    :config
+    (ido-ubiquitous-mode 1))
+#+end_src
+
 
 *** Visuals
 I stumbled upon Prism mode by accident after much mucking about with rainbow-delimiters and friends.  I've really come to prefer prism for coloring.  I also have decided to go full 80s and load a super dank synthwave type theme.  I shopped around for themes quite a bit because emacs by default is hideous.  I originally settled on the ~vscode-dark+~ theme which I really liked and heartily recommend but sometimes you want to have more fun.  ~Base16~-based themes also get an honorable mention for being good.  Lots of folks use ~solarized~ but I found it didn't have enough contrast for me.
