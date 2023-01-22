@@ -161,43 +161,43 @@ Parrot Mode needs no introduction, nor no explanation.
 Emacs and LSP together make for a fantastic editing experience and has deprecated a lot of previously-indispensable stuff so we'll get it going along with company for completion and tree-sitter for parsing.
 
 #+begin_src emacs-lisp
-      (use-package lsp-mode
-	:init
-	;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-	(setq lsp-keymap-prefix "C-c l")
-	:hook ((go-mode . (lambda ()
-			    (lsp-go-install-save-hooks)
-			    (lsp)))
-	       (csharp-mode . lsp)
-	       (web-mode . lsp)
-	       (js-mode .lsp)
-	       (js-jsx-mode . lsp)
-	       (typescript-mode . lsp)
-	       (c++-mode . lsp)
-	       (python-mode . (lambda ()
-				(require 'lsp-python-ms)
-				(lsp))))
-	:commands lsp lsp-deferred
-	:config
-	(setq lsp-log-io nil))
+  (use-package lsp-mode
+    :init
+    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+    (setf lsp-keymap-prefix "C-c l")
+    :hook ((go-mode . (lambda ()
+			(lsp-go-install-save-hooks)
+			(lsp)))
+	   (csharp-mode . lsp)
+	   (web-mode . lsp)
+	   (js-mode .lsp)
+	   (js-jsx-mode . lsp)
+	   (typescript-mode . lsp)
+	   (c++-mode . lsp)
+	   (python-mode . (lambda ()
+			    (require 'lsp-python-ms)
+			    (lsp))))
+    :commands lsp lsp-deferred
+    :config
+    (setq lsp-log-io nil))
 
-      (use-package lsp-ui
-	:commands lsp-ui-mode)
+  (use-package lsp-ui
+    :commands lsp-ui-mode)
 
-      (use-package flycheck
-	:init (global-flycheck-mode))
+  (use-package flycheck
+    :init (global-flycheck-mode))
 
-      (use-package lsp-treemacs
-	:commands lsp-treemacs-errors-list)
+  (use-package lsp-treemacs
+    :commands lsp-treemacs-errors-list)
 
-      (use-package company
-	:hook (prog-mode . company-mode))
+  (use-package company
+    :hook (prog-mode . company-mode))
 
-      (use-package tree-sitter
-	:config
-	(global-tree-sitter-mode)
-	(add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
-      (use-package tree-sitter-langs)
+  (use-package tree-sitter
+    :config
+    (global-tree-sitter-mode)
+    (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
+  (use-package tree-sitter-langs)
 #+end_src
 
 *** Snippets
