@@ -4,7 +4,7 @@
 # the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
 
 * Emacs
-Here is my configuration for the almighty emacs editor.  I used to think it was long and comprehensive until I saw [[https://sachachua.com/dotemacs][some of the more prolific configs]] that abound, so I guess it might be considered somewhat minimalist but I've been using emacs for many years and this works for me.  The vast majority of my config is just loading packages for working with various programming languages, et cetera, but there are some tweaks included herein.  My philosophy is to make few changes, only when there's a clear value-add, and so this file has been built up incrementally over the course of several years.  I believe this is the best way to leverage emacs' strengths and mold it to yourself.  I do not use `vim`-style bindings because I am not a monster.
+Here is my configuration for the almighty emacs editor.  I used to think it was long and comprehensive until I saw [[https://sachachua.com/dotemacs][some of the more prolific configs]] that abound, so I guess it might be considered somewhat minimalist but I've been using emacs for many years and this works for me.  The vast majority of my config is just loading packages for working with various programming languages, et cetera, but there are some tweaks included herein.  My philosophy is to make few changes, only when there's a clear value-add, and so this file has been built up incrementally over the course of several years.  I believe this is the best way to leverage emacs' strengths and mold it to yourself.  I do not use `vim`-style bindings because I am not an unhinged lunatic.
 
 * About this file
 This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.  This file is the primary configuration artifact and most of the sausage gets made here.  There is also an /early-init/ file that sets a few variables before the package system and GUI are loaded.
@@ -12,18 +12,21 @@ This is a so-called "literate" code file, where the code and its documentation a
 ** Usage
 1. Install emacs.  Caveat:  I primarily use emacs on macOS using the railwaycat fork, so your mileage may vary.
 2. Issue the following commands:
-#+begin_src shell
+#+begin_src shell :tangle no
   $ git clone git@github.com:nathanvy/dotemacs.git
   $ cd .emacs.d/
   $ make
 #+end_src
 3.  Go make an espresso while `straight` bootstraps itself and begins pulling down packages.
 
+
+I toyed briefly with `elpaca` which runs many tasks in parallel and has a nifty menu, but the asynchronous nature of package loading meant I was getting weird behaviour that I have not to date had time to isolate and fix, but I'll find time to grok it eventually.
+
 ** Infrastructure
-First enable lexical binding, then set up [[https://github.com/radian-software/straight.el][straight.el]] which is a purely-functional package manager that replaces the built-in ~package.el~ functionality.
+First enable lexical binding, then set up [[https://github.com/radian-software/straight.el][straight]] which is a modern package manager that replaces the built-in ~package.el~ functionality, because [[https://lists.gnu.org/archive/html/emacs-devel/2023-05/msg00156.html][package.el is a dumpster fire]] and apparently not even the emacs maintainers know how it works.
 
 #+begin_src emacs-lisp
-   ;;; -*- lexical-binding: t; -*-
+  ;; -*- lexical-binding: t; -*-
 
   (when (version< emacs-version "27")
     (error "This emacs requires a min version of 27 but you're running %s" emacs-version))
@@ -34,24 +37,25 @@ First enable lexical binding, then set up [[https://github.com/radian-software/s
   (setq use-short-answers t)
   (tool-bar-mode -1)
 
-
   (defvar bootstrap-version)
   (let ((bootstrap-file
 	 (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-	(bootstrap-version 5))
+	(bootstrap-version 6))
     (unless (file-exists-p bootstrap-file)
       (with-current-buffer
 	  (url-retrieve-synchronously
-	   "https://raw.githubusercontent.com/raxod502/straight.el/develop/install.el"
+	   "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
 	   'silent 'inhibit-cookies)
 	(goto-char (point-max))
 	(eval-print-last-sexp)))
     (load bootstrap-file nil 'nomessage))
 
+  (straight-use-package 'use-package)
+  (require 'use-package-ensure)
   (setq straight-use-package-by-default t)
-#+end_src
+  #+end_src
 
-I rarely if ever use ~customize~ but when I do I prefer it to put its mess into its own tidy file.  We also load our secrets that we don't want in source control.  
+I rarely if ever use ~Customize~ but when I do I prefer it to put its mess into its own tidy file.  Also here I'll load some secrets that I don't want in version control.
 #+begin_src emacs-lisp
   (setq custom-file "~/.emacs.d/custom.el")
   (load custom-file)
@@ -80,17 +84,30 @@ This sets up a centralized location where emacs will leave its temporary files i
 	(delete-file file))))
 #+end_src
 
-** Packages
-First things first we install ~use-package~ which makes for a nice and readable configuration without oodles of calls to ~with-eval-after-load~:
-
+** Utilities
+Some utility functions:
 #+begin_src emacs-lisp
-  (straight-use-package 'use-package)
+  (defun increment-number-at-point ()
+    (interactive)
+    (skip-chars-backward "0-9")
+    (or (looking-at "[0-9]+")
+	(error "No number at point"))
+    (replace-match (number-to-string (1+ (string-to-number (match-string 0))))))
+
+  (defun decrement-number-at-point ()
+    (interactive)
+    (skip-chars-backward "0-9")
+    (or (looking-at "[0-9]+")
+	(error "No number at point"))
+    (replace-match (number-to-string (1- (string-to-number (match-string 0))))))
 #+end_src
 
+** Packages
 Now that we're bootstrapped we can start pulling in stuff that we use to get other stuff done.  We'll start with some OS-specific stuff:
 
 #+begin_src emacs-lisp
   (when (eq system-type 'darwin)
+    (customize-set-variable 'native-comp-driver-options '("-Wl,-w")) ;;revisit in emacs 29
     (use-package exec-path-from-shell
       :config
       (exec-path-from-shell-initialize)))
@@ -98,7 +115,7 @@ Now that we're bootstrapped we can start pulling in stuff that we use to get oth
 
 #+end_src
 
-And some general utility packages.  Transpose-frame lets us move frames around easily, and smex aka Smart M-x makes for a smoother experience.
+And some general utility packages.  Transpose-frame lets us move frames around easily, and smex aka Smart M-x is just groovy.
 
 #+begin_src emacs-lisp
   (use-package transpose-frame)
@@ -106,7 +123,7 @@ And some general utility packages.  Transpose-frame lets us move frames around e
   (use-package projectile)
   (use-package neotree)
   (use-package magit)
-#+end_src
+  #+end_src
 
 There are lots of competing (or perhaps it would be better to say /overlapping/) packages in this space but I like good old ~ido~.  It does what I need.  ~ido~ is built in but if you actually set `ido-everywhere = 1` you may discover it's not actually /everywhere/ so we add ~ido-completing-read+~
 
@@ -119,22 +136,33 @@ There are lots of competing (or perhaps it would be better to say /overlapping/)
     (ido-ubiquitous-mode 1))
 #+end_src
 
-
 *** Visuals
-I stumbled upon Prism mode by accident after much mucking about with rainbow-delimiters and friends.  I've really come to prefer prism for coloring.  I also have decided to go full 80s and load a super dank synthwave type theme.  I shopped around for themes quite a bit because emacs by default is hideous.  I originally settled on the ~vscode-dark+~ theme which I really liked and heartily recommend but sometimes you want to have more fun.  ~Base16~-based themes also get an honorable mention for being good.  Lots of folks use ~solarized~ but I found it didn't have enough contrast for me.
+I stumbled upon ~prism-mode~ by accident after much mucking about with ~rainbow-delimiters~ and friends, and I've really come to prefer prism for coloring.
+
+In terms of graphical themes, I spent quite some time embracing the glorious 80s aesthetic and for a while enjoyed a super dank synthwave type theme.  I shopped around for themes quite a bit because emacs by default is quite frankly hideous.  I originally settled on the ~vscode-dark+~ theme which I really liked and heartily recommend but sometimes you want to have more fun.  ~Base16~-based themes also get an honorable mention for being good.  Lots of folks use ~solarized~ but I found it didn't have enough contrast for me.  These days I appear to have settled on ~nord~.
+
+We thank these themes for their prior service:
+- ~synthwave-emacs~
+- ~doom-outrun-electric~
+- ~doom-laserwave~
+- ~tomorrow-night~
+- ~vscode-dark~
 
 #+begin_src emacs-lisp
   (column-number-mode t)
   (show-paren-mode t)
 
-  (use-package doom-themes
+  (use-package nord-theme
     :if (display-graphic-p)
+    :straight (nord-theme
+	       :type git
+	       :host github
+	       :repo "nordtheme/emacs")
     :config
     (set-face-attribute 'default nil :family "Monaco")
     (set-face-attribute 'fixed-pitch nil :family "Monaco")
     (set-face-attribute 'variable-pitch nil :family "SF Pro Display" :height 140)
-    (set-face-attribute 'show-paren-match nil :foreground "#ffffff" :background "#ff2afc")
-    (load-theme 'doom-outrun-electric t))
+    (load-theme 'nord t))
 
   (use-package all-the-icons
     :if (display-graphic-p))
@@ -142,13 +170,25 @@ I stumbled upon Prism mode by accident after much mucking about with rainbow-del
   (use-package mode-line-bell
     :config (mode-line-bell-mode))
 
-  (use-package prism
-    :commands prism-mode
-    :init
-    (add-hook 'prog-mode-hook #'prism-mode))
+  ;; temporarily disabled
+  ;; (use-package prism
+  ;;     :commands prism-mode
+  ;;     :init
+  ;;     (add-hook 'go-mode-hook #'prism-mode)
+  ;;     (add-hook 'csharp-mode-hook #'prism-mode)
+  ;;     (add-hook 'js-mode-hook #'prism-mode)
+  ;;     (add-hook 'js-jsx-mode-hook #'prism-mode)
+  ;;     (add-hook 'typescirpt-mode-hook #'prism-mode)
+  ;;     (add-hook 'c++-mode-hook #'prism-mode)
+  ;;     (add-hook 'emacs-lisp-mode-hook #'prism-mode)
+  ;;     (add-hook 'ielm-mode-hook #'prism-mode)
+  ;;     (add-hook 'lisp-mode-hook #'prism-mode)
+  ;;     (add-hook 'lisp-interaction-mode-hook #'prism-mode)
+  ;;     (add-hook 'scheme-mode-hook #'prism-mode)
+  ;;     (add-hook 'python-mode-hook #'prism-whitespace-mode))
 #+end_src
 
-Parrot Mode needs no introduction, nor no explanation.
+Parrot Mode needs no introduction, and no explanation.
 
 #+begin_src emacs-lisp
   (use-package parrot
@@ -158,7 +198,7 @@ Parrot Mode needs no introduction, nor no explanation.
 
 
 *** Language Server Protocol
-Emacs and LSP together make for a fantastic editing experience and has deprecated a lot of previously-indispensable stuff so we'll get it going along with company for completion and tree-sitter for parsing.
+Emacs and LSP together make for a fantastic editing experience and has deprecated a lot of [[https://0x85.org/csharp-emacs.html][previously-indispensable stuff]] so we'll get it going along with company for completion and tree-sitter for parsing. 
 
 #+begin_src emacs-lisp
   (use-package lsp-mode
@@ -169,6 +209,7 @@ Emacs and LSP together make for a fantastic editing experience and has deprecate
 			(lsp-go-install-save-hooks)
 			(lsp)))
 	   (csharp-mode . lsp)
+	   (ess-r-mode . lsp)
 	   (web-mode . lsp)
 	   (js-mode .lsp)
 	   (js-jsx-mode . lsp)
@@ -182,7 +223,7 @@ Emacs and LSP together make for a fantastic editing experience and has deprecate
     (setq lsp-log-io nil))
 
   (use-package lsp-ui
-    :commands lsp-ui-mode)
+    :hook (lsp-mode . lsp-ui-mode))
 
   (use-package flycheck
     :init (global-flycheck-mode))
@@ -198,10 +239,11 @@ Emacs and LSP together make for a fantastic editing experience and has deprecate
     (global-tree-sitter-mode)
     (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
   (use-package tree-sitter-langs)
+
 #+end_src
 
 *** Snippets
-Recently I started writing a lot of Go (golang) and there's an awful lot of repetitive error checking when trying to follow the idiomatic style.  I got annoyed at writing the same if construct hundreds of times so I decided it was finally time to install yasnippet.  It comes with ~TAB~ bound to ~yas-expand~ by default which I don't like, so I disabled it here by setting it to nil, and moved it to a different key combination at the end of this file.
+In 2021 I started writing a lot of Go (golang) and there's an awful lot of repetitive error checking when trying to follow the idiomatic style.  I got annoyed at writing the same if construct hundreds of times so I decided it was finally time to install yasnippet.  It comes with ~TAB~ bound to ~yas-expand~ by default which I don't like, so I disabled it here by setting it to nil, and moved it to a different key combination at the end of this file.
 
 #+begin_src emacs-lisp
   (use-package yasnippet
@@ -218,7 +260,9 @@ I hated lisp at first but I've found that it's really grown on me.  It has its w
 #+begin_src emacs-lisp
   (use-package sly
     :config
-    (setq inferior-lisp-program "sbcl"))
+    (setq inferior-lisp-program "sbcl")
+    (setq org-babel-lisp-eval-fn #'sly-eval)
+    (setq org-confirm-babel-evaluate nil))
 
   (use-package paredit
     :mode "paredit-mode"
@@ -230,6 +274,37 @@ I hated lisp at first but I've found that it's really grown on me.  It has its w
     (add-hook 'lisp-mode-hook #'enable-paredit-mode)
     (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
     (add-hook 'scheme-mode-hook #'enable-paredit-mode))
+#+end_src
+
+*** R
+At the time of writing this paragraph I'm in an MBA program and for our analytics courses they inexplicably chose R over Python, because I guess they hate us.  So here's ~ess~ (Emacs Speaks Statistics) and ~ess-site~ which sets up the file type associations, and I'm going to also load EIN, the Emacs IPython Notebook, because why not:
+
+#+begin_src emacs-lisp
+  (use-package ess
+    :init (require 'ess-site))
+
+  (use-package ein)
+#+end_src
+
+In the course of writing assignments I ran into a problem where certain tidyverse packages were causing weird coloration in the inferior ESS R buffer, such that the text was basically unreadable on a dark background.  After some digging it seems that the R process emits super leet haxors ANSI color codes, because you know why not?
+
+The issue is this one:  https://github.com/emacs-ess/ESS/issues/1193
+
+#+begin_src emacs-lisp
+
+  (defun my-inferior-ess-init ()
+    "Workaround for https://github.com/emacs-ess/ESS/issues/1193"
+    (add-hook 'comint-preoutput-filter-functions #'xterm-color-filter -90 t)
+    (setq-local ansi-color-for-comint-mode nil))
+
+  (use-package xterm-color
+      :straight (xterm-color
+		 :type git
+		 :host github
+		 :repo "atomontage/xterm-color")
+      :config
+      (add-hook 'inferior-ess-mode-hook #'my-inferior-ess-init))
+
 #+end_src
 
 *** Other programming languages
@@ -253,9 +328,7 @@ Most of these are simple invocations of ~use-package~ and require no explanation
 
 #+end_src
 
-
-
-Some generally-useful stuff like Dashboard and package like Org for writing prose:
+Some generally-useful stuff like Dashboard and packages like Org for writing prose:
 
 #+begin_src emacs-lisp
   (use-package dashboard
@@ -272,7 +345,9 @@ Some generally-useful stuff like Dashboard and package like Org for writing pros
     (setf org-src-tab-acts-natively t)
     (setf org-startup-truncated nil)
     :config
-    (org-babel-do-load-languages 'org-babel-load-languages '((lisp . t) (emacs-lisp . t)))
+    (org-babel-do-load-languages 'org-babel-load-languages '((R . t)
+							     (lisp . t)
+							     (emacs-lisp . t)))
     (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-code nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-block nil :inherit 'fixed-pitch)
@@ -309,26 +384,15 @@ For writing prose or anything non-code I like to use Olivetti which adds some ni
 				(variable-pitch-mode 1))))
 #+end_src
 
-I find it's approximately 109812039823 times more convenient to use org-export or pandoc to leverage TeX and friends, but when I do have to write TeX directly I use Auctex for like most people probably do.  Note that if you're not using ~straight~ you should use ~:ensure auctex~ instead.
-
-#+begin_src emacs-lisp
-  (use-package tex
-    :straight auctex
-    :mode
-    ("\\.tex\\'" . LaTeX-mode)
-    :init
-    (add-hook 'LaTeX-mode-hook (lambda ()
-				 (LaTeX-math-mode 1)
-				 (TeX-fold-mode 1)
-				 (TeX-PDF-mode 1))))
-
-  (use-package cdlatex)
-#+end_src
-
 ** Keybinds
 
 I decided to collect all my custom keybinds into one section here at the end for easy management:
 #+begin_src emacs-lisp
+  ;;mode-specific
+  (define-key ess-r-mode-map (kbd "C-c >") "|>")
+  (define-key ess-r-mode-map (kbd "C-c <") "<-")
+
+  ;; global
   (global-set-key (kbd "M-n") 'company-select-next)
   (global-set-key (kbd "M-p") 'company-select-previous)
 
@@ -352,6 +416,10 @@ I decided to collect all my custom keybinds into one section here at the end for
 
   (global-set-key (kbd "M-x") 'smex)
   (global-set-key (kbd "M-X") 'smex-major-mode-commands)
-  ;; This is your old M-x.
+
+  ;; This is the old M-x.
   (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
+
+  (global-set-key (kbd "C-c +") 'increment-number-at-point)
+  (global-set-key (kbd "C-c -") 'decrement-number-at-point)
 #+end_src

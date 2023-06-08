@@ -1,5 +1,5 @@
 ;;; -*- lexical-binding: t; -*-
-(setq package-enable-at-startup nil)
+(setq package-enable-at-startup t)
 
 ;;https://emacs-lsp.github.io/lsp-mode/page/performance/
 (setq gc-cons-threshold (* 1024 1024 32))
