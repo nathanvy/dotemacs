@@ -10,7 +10,7 @@ Here is my configuration for the almighty emacs editor.  I used to think it was 
 This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.  This file is the primary configuration artifact and most of the sausage gets made here.  There is also an /early-init/ file that sets a few variables before the package system and GUI are loaded.
 
 ** Usage
-1. Install emacs.  Caveat:  I primarily use emacs on macOS using the railwaycat fork, so your mileage may vary.
+1. Install emacs.  Caveat:  I primarily use emacs on macOS using the Yamamoto (aka the railwaycat) fork, so your mileage may vary.
 2. Issue the following commands:
 #+begin_src shell :tangle no
   $ git clone git@github.com:nathanvy/dotemacs.git
@@ -121,7 +121,6 @@ And some general utility packages.  Transpose-frame lets us move frames around e
   (use-package transpose-frame)
   (use-package smex)
   (use-package projectile)
-  (use-package neotree)
   (use-package magit)
   #+end_src
 
@@ -277,13 +276,14 @@ I hated lisp at first but I've found that it's really grown on me.  It has its w
 #+end_src
 
 *** R
-At the time of writing this paragraph I'm in an MBA program and for our analytics courses they inexplicably chose R over Python, because I guess they hate us.  So here's ~ess~ (Emacs Speaks Statistics) and ~ess-site~ which sets up the file type associations, and I'm going to also load EIN, the Emacs IPython Notebook, because why not:
+At the time of writing this paragraph I'm in an MBA program and for our analytics courses they inexplicably chose R over Python, because I guess they hate us.  So here's ~ess~ (Emacs Speaks Statistics).  I haven't bothered to set up ~polymode~ for doing "RMarkdown" shenanigans because org is good enough for me.
 
 #+begin_src emacs-lisp
-  (use-package ess
-    :init (require 'ess-site))
-
-  (use-package ein)
+      (use-package ess
+	:bind (:map ess-r-mode-map
+		    ("M-p" . " %>%"))
+	:config
+	(require 'ess-r-mode))
 #+end_src
 
 In the course of writing assignments I ran into a problem where certain tidyverse packages were causing weird coloration in the inferior ESS R buffer, such that the text was basically unreadable on a dark background.  After some digging it seems that the R process emits super leet haxors ANSI color codes, because you know why not?
@@ -310,25 +310,39 @@ The issue is this one:  https://github.com/emacs-ess/ESS/issues/1193
 *** Other programming languages
 Most of these are simple invocations of ~use-package~ and require no explanation.
 #+begin_src emacs-lisp
-  (use-package web-mode)
+	(use-package web-mode)
 
-  (use-package csharp-mode
-    :config
-    (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode)))
+	(use-package csharp-mode
+	  :config
+	  (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode)))
 
-  (use-package python)
-  (use-package lsp-python-ms
-    :after (lsp-mode python)
-    :init (setq lsp-python-ms-auto-install-server t))
+	(use-package glsl-mode
+	  :straight (glsl-mode
+		     :type git
+		     :host github
+		     :repo "jimhourihan/glsl-mode"))
 
-  (defun lsp-go-install-save-hooks ()
-    (add-hook 'before-save-hook #'lsp-format-buffer t t)
-    (add-hook 'before-save-hook #'lsp-organize-imports t t))
-  (use-package go-mode)
+	(use-package python)
+	(use-package lsp-python-ms
+	  :after (lsp-mode python)
+	  :init (setq lsp-python-ms-auto-install-server t))
+
+	(defun lsp-go-install-save-hooks ()
+	  (add-hook 'before-save-hook #'lsp-format-buffer t t)
+	  (add-hook 'before-save-hook #'lsp-organize-imports t t))
+	(use-package go-mode)
 
 #+end_src
 
-Some generally-useful stuff like Dashboard and packages like Org for writing prose:
+Some generally-useful stuff like Dashboard and packages like Org for writing prose comes here.  It's not a typo: ~pdflatex~ needs to be invoked three times because of the way the standard LaTeX recipe works, which goes something like this:
+
+1. ~$ latex <filename>~
+2. ~$ bibtex <filename>~
+3. ~$ latex <filename>~
+4. ~$ latex <filename>~
+
+
+Basically, the first time you run it, latex writes citations and stuff like ~\label~ to a ~.aux~ file, which is what bibtex reads.  BibTeX reads that file as well as the ~.bib~ file and uses that to format the references.  When you run LaTeX a second time it also reads both ~.aux~ and ~.tex~ files and if bibtex generated any ~.bbl~ files it reads those as well, which is how it inserts the references into the output.  The third run is what causes the citations and labels to get inserted into the output.  If you have multiple bibliographies you'll need more invocations of bibtex and latex and it quickly becomes a clusterfuck.  Anyways this is why I have three calls to ~pdflatex~ in there.
 
 #+begin_src emacs-lisp
   (use-package dashboard
@@ -356,7 +370,13 @@ Some generally-useful stuff like Dashboard and packages like Org for writing pro
     (set-face-attribute 'org-block-begin-line nil :slant 'normal :underline nil :extend nil)
     (set-face-attribute 'org-block-end-line nil :slant 'normal :overline nil :extend nil)
     (setf org-html-preamble nil)
-    (setf org-html-postamble nil))
+    (setf org-html-postamble nil)
+    (setq org-latex-listings 'minted)
+    (setq org-latex-packages-alist '(("" "minted")))
+    (setq org-latex-pdf-process
+    '("pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+      "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
+      "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")))
 
   (use-package org-bullets
     :init
@@ -386,25 +406,15 @@ For writing prose or anything non-code I like to use Olivetti which adds some ni
 
 ** Keybinds
 
-I decided to collect all my custom keybinds into one section here at the end for easy management:
+I decided to collect all my global custom keybinds into one section here at the end for easy management:
 #+begin_src emacs-lisp
-  ;;mode-specific
-  (define-key ess-r-mode-map (kbd "C-c >") "|>")
-  (define-key ess-r-mode-map (kbd "C-c <") "<-")
-
-  ;; global
-  (global-set-key (kbd "M-n") 'company-select-next)
-  (global-set-key (kbd "M-p") 'company-select-previous)
-
   (global-set-key (kbd "C-c d") 'lsp-find-definition)
   (global-set-key (kbd "C-c g") 'rgrep)
-
-  (global-set-key (kbd "C-c e") 'neotree-toggle)
 
   (global-set-key (kbd "C-c i") 'flip-frame)
   (global-set-key (kbd "C-c o") 'flop-frame)
   (global-set-key (kbd "C-c r") 'rotate-frame-clockwise)
-  (global-set-key (kbd "C-c t") 'transpose-frame)
+  (global-set-key (kbd "C-c t") 'treemacs)
 
   (global-set-key (kbd "C-c y") 'yas-expand)
 
