@@ -4,7 +4,9 @@
 # the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
 
 * Emacs
-Here is my configuration for the almighty emacs editor.  I used to think it was long and comprehensive until I saw [[https://sachachua.com/dotemacs][some of the more prolific configs]] that abound, so I guess it might be considered somewhat minimalist but I've been using emacs for many years and this works for me.  The vast majority of my config is just loading packages for working with various programming languages, et cetera, but there are some tweaks included herein.  My philosophy is to make few changes, only when there's a clear value-add, and so this file has been built up incrementally over the course of several years.  I believe this is the best way to leverage emacs' strengths and mold it to yourself.  I do not use `vim`-style bindings because I am not an unhinged lunatic.
+Here is my configuration for the almighty emacs editor.  I used to think it was long and comprehensive until I saw [[https://sachachua.com/dotemacs][some of the more prolific configs]] that abound, so I guess it might be considered somewhat minimalist but I've been using emacs for many years and this works for me.  The vast majority of my config is just loading packages for working with various programming languages, et cetera, but there are some tweaks included herein.  My philosophy is to make few changes, only when there's a clear value-add, and so this file has been built up incrementally over the course of several years.  I believe this is the best way to leverage emacs' strengths and mold it to yourself.
+
+I do not use `vim`-style bindings because I am not a deranged lunatic.
 
 * About this file
 This is a so-called "literate" code file, where the code and its documentation are intertwined as one file and separated at compile/runtime.  This file is the primary configuration artifact and most of the sausage gets made here.  There is also an /early-init/ file that sets a few variables before the package system and GUI are loaded.
@@ -20,34 +22,40 @@ This is a so-called "literate" code file, where the code and its documentation a
 3.  Go make an espresso while `straight` bootstraps itself and begins pulling down packages.
 
 
-I toyed briefly with `elpaca` which runs many tasks in parallel and has a nifty menu, but the asynchronous nature of package loading meant I was getting weird behaviour that I have not to date had time to isolate and fix, but I'll find time to grok it eventually.
+I toyed briefly with `elpaca` which runs many tasks in parallel and has a nifty menu, but the asynchronous nature of package loading meant I was getting weird behaviour that I have not to date had time to isolate and fix, but I'll find time to grok it eventually, and will probably end up migrating there.
 
 ** Infrastructure
-First enable lexical binding, then set up [[https://github.com/radian-software/straight.el][straight]] which is a modern package manager that replaces the built-in ~package.el~ functionality, because [[https://lists.gnu.org/archive/html/emacs-devel/2023-05/msg00156.html][package.el is a dumpster fire]] and apparently not even the emacs maintainers know how it works.
+First enable lexical binding, then set up [[https://github.com/radian-software/straight.el][straight]] which is a modern package manager that sidesteps the built-in ~package.el~ functionality, because [[https://lists.gnu.org/archive/html/emacs-devel/2023-05/msg00156.html][package.el is a dumpster fire]] and apparently not even the emacs maintainers know how it works.  Note that we use tree-sitter so technically we depend on emacs version 29+, but you could use the tree-sitter packages for prior versions.  In that case change/delete the check below.
 
 #+begin_src emacs-lisp
   ;; -*- lexical-binding: t; -*-
 
-  (when (version< emacs-version "27")
-    (error "This emacs requires a min version of 27 but you're running %s" emacs-version))
+  (when (version< emacs-version "29")
+    (error "This emacs requires a min version of 29 but you're running %s" emacs-version))
 
   (setq user-full-name "Nathan Van Ymeren"
-	user-mail-address "n@0x85.org")
+        user-mail-address "n@0x85.org")
 
   (setq use-short-answers t)
   (tool-bar-mode -1)
 
+  (set-default-coding-systems 'utf-8)  
+  (prefer-coding-system       'utf-8)  
+  (set-terminal-coding-system 'utf-8)  
+  (set-keyboard-coding-system 'utf-8)  
+  (set-language-environment "English") 
+
   (defvar bootstrap-version)
   (let ((bootstrap-file
-	 (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-	(bootstrap-version 6))
+         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
+        (bootstrap-version 6))
     (unless (file-exists-p bootstrap-file)
       (with-current-buffer
-	  (url-retrieve-synchronously
-	   "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-	   'silent 'inhibit-cookies)
-	(goto-char (point-max))
-	(eval-print-last-sexp)))
+          (url-retrieve-synchronously
+           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
+           'silent 'inhibit-cookies)
+        (goto-char (point-max))
+        (eval-print-last-sexp)))
     (load bootstrap-file nil 'nomessage))
 
   (straight-use-package 'use-package)
@@ -91,15 +99,29 @@ Some utility functions:
     (interactive)
     (skip-chars-backward "0-9")
     (or (looking-at "[0-9]+")
-	(error "No number at point"))
+        (error "No number at point"))
     (replace-match (number-to-string (1+ (string-to-number (match-string 0))))))
 
   (defun decrement-number-at-point ()
     (interactive)
     (skip-chars-backward "0-9")
     (or (looking-at "[0-9]+")
-	(error "No number at point"))
+        (error "No number at point"))
     (replace-match (number-to-string (1- (string-to-number (match-string 0))))))
+
+  (defun insert-line-below ()
+    "Insert a blank line below point"
+    (interactive)
+    (move-beginning-of-line nil)
+    (insert "\n")
+    (if electric-indent-inhibit
+        (let* ((indent-end (progn (crux-move-to-mode-line-start) (point)))
+               (indent-start (progn (move-beginning-of-line nil) (point)))
+               (indent-chars (buffer-substring indent-start indent-end)))
+          (forward-line -1)
+          (insert indent-chars))
+      (forward-line -1)
+      (indent-according-to-mode)))
 #+end_src
 
 ** Packages
@@ -122,6 +144,9 @@ And some general utility packages.  Transpose-frame lets us move frames around e
   (use-package smex)
   (use-package projectile)
   (use-package magit)
+  (use-package which-key
+    :config
+    (which-key-mode))
   #+end_src
 
 There are lots of competing (or perhaps it would be better to say /overlapping/) packages in this space but I like good old ~ido~.  It does what I need.  ~ido~ is built in but if you actually set `ido-everywhere = 1` you may discover it's not actually /everywhere/ so we add ~ido-completing-read+~
@@ -138,7 +163,7 @@ There are lots of competing (or perhaps it would be better to say /overlapping/)
 *** Visuals
 I stumbled upon ~prism-mode~ by accident after much mucking about with ~rainbow-delimiters~ and friends, and I've really come to prefer prism for coloring.
 
-In terms of graphical themes, I spent quite some time embracing the glorious 80s aesthetic and for a while enjoyed a super dank synthwave type theme.  I shopped around for themes quite a bit because emacs by default is quite frankly hideous.  I originally settled on the ~vscode-dark+~ theme which I really liked and heartily recommend but sometimes you want to have more fun.  ~Base16~-based themes also get an honorable mention for being good.  Lots of folks use ~solarized~ but I found it didn't have enough contrast for me.  These days I appear to have settled on ~nord~.
+I shopped around for themes quite a bit because emacs by default is quite frankly hideous, and I spent quite some time embracing the glorious 80s aesthetic and for a while enjoyed a super dank synthwave type theme.  Originally I had settled on the ~vscode-dark+~ theme which I really liked and heartily recommend but sometimes you want to have more fun.  ~Base16~-based themes also get an honorable mention for being good.  Lots of folks use ~solarized~ but I found it didn't have enough contrast for me.  These days I appear to have settled on ~nord~.
 
 We thank these themes for their prior service:
 - ~synthwave-emacs~
@@ -150,6 +175,7 @@ We thank these themes for their prior service:
 #+begin_src emacs-lisp
   (column-number-mode t)
   (show-paren-mode t)
+  (setq-default indent-tabs-mode nil)
 
   (use-package nord-theme
     :if (display-graphic-p)
@@ -195,28 +221,27 @@ Parrot Mode needs no introduction, and no explanation.
     :config (parrot-mode))
 #+end_src
 
-
 *** Language Server Protocol
-Emacs and LSP together make for a fantastic editing experience and has deprecated a lot of [[https://0x85.org/csharp-emacs.html][previously-indispensable stuff]] so we'll get it going along with company for completion and tree-sitter for parsing. 
+Emacs and LSP together make for a fantastic editing experience and has deprecated a lot of [[https://0x85.org/csharp-emacs.html][previously-indispensable stuff]] so we'll get it going along with company for completion.  For pre-29 emacs this is where I also ~use-package~'d the tree-sitter packages and languages but with the release of 29.1 that's no longer necessary as long as you compile emacs ~--with-tree-sitter~
 
 #+begin_src emacs-lisp
   (use-package lsp-mode
     :init
     ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
     (setf lsp-keymap-prefix "C-c l")
-    :hook ((go-mode . (lambda ()
-			(lsp-go-install-save-hooks)
-			(lsp)))
-	   (csharp-mode . lsp)
+    :hook ((go-ts-mode . (lambda ()
+			   (lsp-go-install-save-hooks)
+			   (lsp)))
+	   (csharp-ts-mode . lsp)
 	   (ess-r-mode . lsp)
 	   (web-mode . lsp)
-	   (js-mode .lsp)
+	   (js-ts-mode .lsp)
 	   (js-jsx-mode . lsp)
-	   (typescript-mode . lsp)
-	   (c++-mode . lsp)
-	   (python-mode . (lambda ()
-			    (require 'lsp-python-ms)
-			    (lsp))))
+	   (typescript-ts-mode . lsp)
+	   (c-or-c++-ts-mode . lsp)
+	   (python-ts-mode . (lambda ()
+			       (require 'lsp-python-ms)
+			       (lsp))))
     :commands lsp lsp-deferred
     :config
     (setq lsp-log-io nil))
@@ -232,13 +257,55 @@ Emacs and LSP together make for a fantastic editing experience and has deprecate
 
   (use-package company
     :hook (prog-mode . company-mode))
+  #+end_src
 
-  (use-package tree-sitter
-    :config
-    (global-tree-sitter-mode)
-    (add-hook 'tree-sitter-after-on-hook #'tree-sitter-hl-mode))
-  (use-package tree-sitter-langs)
+  Thanks Mickey Petersen for this list, to which I've added a few:
+  #+begin_src emacs-lisp
+    ;; https://www.masteringemacs.org/article/how-to-get-started-tree-sitter
+    (setq treesit-language-source-alist
+     '((bash "https://github.com/tree-sitter/tree-sitter-bash")
+       (cmake "https://github.com/uyha/tree-sitter-cmake")
+       (css "https://github.com/tree-sitter/tree-sitter-css")
+       (csharp "https://github.com/tree-sitter/tree-sitter-c-sharp")
+       (lisp "https://github.com/theHamsta/tree-sitter-commonlisp")
+       (cuda "https://github.com/theHamsta/tree-sitter-cuda")
+       (elisp "https://github.com/Wilfred/tree-sitter-elisp")
+       (fortran "https://github.com/stadelmanma/tree-sitter-fortran")
+       (go "https://github.com/tree-sitter/tree-sitter-go")
+       (html "https://github.com/tree-sitter/tree-sitter-html")
+       (java "https://github.com/tree-sitter/tree-sitter-java")
+       (javascript "https://github.com/tree-sitter/tree-sitter-javascript" "master" "src")
+       (julia "https://github.com/tree-sitter/tree-sitter-julia")
+       (json "https://github.com/tree-sitter/tree-sitter-json")
+       (latex "https://github.com/latex-lsp/tree-sitter-latex")
+       (lua "https://github.com/Azganoth/tree-sitter-lua")
+       (make "https://github.com/alemuller/tree-sitter-make")
+       (markdown "https://github.com/ikatyang/tree-sitter-markdown")
+       (objc "https://github.com/jiyee/tree-sitter-objc")
+       (org "https://github.com/milisims/tree-sitter-org")
+       (perl "https://github.com/tree-sitter-perl/tree-sitter-perl")
+       (php "https://github.com/tree-sitter/tree-sitter-php")
+       (proto "https://github.com/mitchellh/tree-sitter-proto")
+       (python "https://github.com/tree-sitter/tree-sitter-python")
+       (R "https://github.com/r-lib/tree-sitter-r")
+       (ruby "https://github.com/tree-sitter/tree-sitter-ruby")
+       (rust "https://github.com/tree-sitter/tree-sitter-rust")
+       (scheme "https://github.com/6cdh/tree-sitter-scheme")
+       (sql "https://github.com/m-novikov/tree-sitter-sql")
+       (toml "https://github.com/tree-sitter/tree-sitter-toml")
+       (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
+       (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
+       (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+#+end_src
 
+But we don't want to manually deal with enabling the ~<name>-ts-mode~ and wondering which are available so we'll just use ~treesit-auto~:
+
+#+begin_src emacs-lisp
+      ;;https://github.com/renzmann/treesit-auto
+      (use-package treesit-auto
+	:config
+	(setq treesit-auto-install 'prompt)
+	(global-treesit-auto-mode))
 #+end_src
 
 *** Snippets
@@ -290,6 +357,7 @@ In the course of writing assignments I ran into a problem where certain tidyvers
 
 The issue is this one:  https://github.com/emacs-ess/ESS/issues/1193
 
+And the solution/workaround was:
 #+begin_src emacs-lisp
 
   (defun my-inferior-ess-init ()
@@ -312,10 +380,6 @@ Most of these are simple invocations of ~use-package~ and require no explanation
 #+begin_src emacs-lisp
 	(use-package web-mode)
 
-	(use-package csharp-mode
-	  :config
-	  (add-to-list 'auto-mode-alist '("\\.csproj\\'" . nxml-mode)))
-
 	(use-package glsl-mode
 	  :straight (glsl-mode
 		     :type git
@@ -334,7 +398,7 @@ Most of these are simple invocations of ~use-package~ and require no explanation
 
 #+end_src
 
-Some generally-useful stuff like Dashboard and packages like Org for writing prose comes here.  It's not a typo: ~pdflatex~ needs to be invoked three times because of the way the standard LaTeX recipe works, which goes something like this:
+Some generally-useful stuff like Dashboard and packages like Org for writing prose comes here.  If you read below and are confused, it's not a typo: ~pdflatex~ needs to be invoked three times because of the way the standard LaTeX recipe works, which goes something like this:
 
 1. ~$ latex <filename>~
 2. ~$ bibtex <filename>~
@@ -406,7 +470,7 @@ For writing prose or anything non-code I like to use Olivetti which adds some ni
 
 ** Keybinds
 
-I decided to collect all my global custom keybinds into one section here at the end for easy management:
+I put package-local/namespaced binds with their use-package declarations but I decided to collect all my global custom keybinds into one section here at the end to keep better tabs on my ~C-c <single char>~ namespace.
 #+begin_src emacs-lisp
   (global-set-key (kbd "C-c d") 'lsp-find-definition)
   (global-set-key (kbd "C-c g") 'rgrep)
@@ -427,9 +491,13 @@ I decided to collect all my global custom keybinds into one section here at the 
   (global-set-key (kbd "M-x") 'smex)
   (global-set-key (kbd "M-X") 'smex-major-mode-commands)
 
+  (global-set-key (kbd "M-o") 'insert-line-below)
+
   ;; This is the old M-x.
   (global-set-key (kbd "C-c C-c M-x") 'execute-extended-command)
 
   (global-set-key (kbd "C-c +") 'increment-number-at-point)
   (global-set-key (kbd "C-c -") 'decrement-number-at-point)
+
+  (global-unset-key (kbd "M-t"))
 #+end_src
