@@ -1,6 +1,6 @@
 #+STARTUP: showeverything
 #+STARTUP: inlineimages
-#+PROPERTY: header-args :tangle yes
+#+PROPERTY: header-args :tangle "init.el"
 # the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
 
 * Emacs
@@ -19,54 +19,80 @@ This is a so-called "literate" code file, where the code and its documentation a
   $ cd .emacs.d/
   $ make
 #+end_src
-3.  Go make an espresso while `straight` bootstraps itself and begins pulling down packages.
-
-
-I toyed briefly with `elpaca` which runs many tasks in parallel and has a nifty menu, but the asynchronous nature of package loading meant I was getting weird behaviour that I have not to date had time to isolate and fix, but I'll find time to grok it eventually, and will probably end up migrating there.
-
 ** Infrastructure
-First enable lexical binding, then set up [[https://github.com/radian-software/straight.el][straight]] which is a modern package manager that sidesteps the built-in ~package.el~ functionality, because [[https://lists.gnu.org/archive/html/emacs-devel/2023-05/msg00156.html][package.el is a dumpster fire]] and apparently not even the emacs maintainers know how it works.  Note that we use tree-sitter so technically we depend on emacs version 29+, but you could use the tree-sitter packages for prior versions.  In that case change/delete the check below.
+First enable lexical binding, then set up [https://github.com/progfolio/elpaca][Elpaca]] which is a replacement for the built-in ~package.el~ functionality, because [[https://lists.gnu.org/archive/html/emacs-devel/2023-05/msg00156.html][package.el is a dumpster fire]] and apparently not even the emacs maintainers know how it works.  Note that we use tree-sitter so technically we depend on emacs version 29+, but you could use the tree-sitter packages for prior versions.  In that case change/delete the check below.
 
 #+begin_src emacs-lisp
-  ;; -*- lexical-binding: t; -*-
+;; -*- lexical-binding: t; -*-
+  (error "This emacs requires a min version of 29 but you're running %s" emacs-version))
 
-  (when (version< emacs-version "29")
-    (error "This emacs requires a min version of 29 but you're running %s" emacs-version))
+(setq user-full-name "Nathan Van Ymeren"
+      user-mail-address "n@0x85.org")
 
-  (setq user-full-name "Nathan Van Ymeren"
-        user-mail-address "n@0x85.org")
+(setq use-short-answers t)
+(tool-bar-mode -1)
 
-  (setq use-short-answers t)
-  (tool-bar-mode -1)
+(set-default-coding-systems 'utf-8)
+(prefer-coding-system       'utf-8)
+(set-terminal-coding-system 'utf-8)
+(set-keyboard-coding-system 'utf-8)
+(set-language-environment "English")
+#+end_src
 
-  (set-default-coding-systems 'utf-8)  
-  (prefer-coding-system       'utf-8)  
-  (set-terminal-coding-system 'utf-8)  
-  (set-keyboard-coding-system 'utf-8)  
-  (set-language-environment "English") 
+This is the Elpaca installer. It may need to be updated if it is changed upstream.
+#+begin_src emacs-lisp
+(defvar elpaca-installer-version 0.7)
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil :depth 1
+                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                              :build (:not elpaca--activate-package)))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
+       (build (expand-file-name "elpaca/" elpaca-builds-directory))
+       (order (cdr elpaca-order))
+       (default-directory repo))
+  (add-to-list 'load-path (if (file-exists-p build) build repo))
+  (unless (file-exists-p repo)
+    (make-directory repo t)
+    (when (< emacs-major-version 28) (require 'subr-x))
+    (condition-case-unless-debug err
+        (if-let ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                 ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                 ,@(when-let ((depth (plist-get order :depth)))
+                                                     (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                 ,(plist-get order :repo) ,repo))))
+                 ((zerop (call-process "git" nil buffer t "checkout"
+                                       (or (plist-get order :ref) "--"))))
+                 (emacs (concat invocation-directory invocation-name))
+                 ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                       "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                 ((require 'elpaca))
+                 ((elpaca-generate-autoloads "elpaca" repo)))
+            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+          (error "%s" (with-current-buffer buffer (buffer-string))))
+      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+  (unless (require 'elpaca-autoloads nil t)
+    (require 'elpaca)
+    (elpaca-generate-autoloads "elpaca" repo)
+    (load "./elpaca-autoloads")))
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@elpaca-order))
+#+end_src
 
-  (defvar bootstrap-version)
-  (let ((bootstrap-file
-         (expand-file-name "straight/repos/straight.el/bootstrap.el" user-emacs-directory))
-        (bootstrap-version 6))
-    (unless (file-exists-p bootstrap-file)
-      (with-current-buffer
-          (url-retrieve-synchronously
-           "https://raw.githubusercontent.com/radian-software/straight.el/develop/install.el"
-           'silent 'inhibit-cookies)
-        (goto-char (point-max))
-        (eval-print-last-sexp)))
-    (load bootstrap-file nil 'nomessage))
-
-  (straight-use-package 'use-package)
-  (require 'use-package-ensure)
-  (setq straight-use-package-by-default t)
-  #+end_src
+Enable Elpaca's use-package integration and customize use-package.
+#+begin_src emacs-lisp
+(elpaca elpaca-use-package (elpaca-use-package-mode)
+        (setq use-package-always-ensure t))
+#+end_src
 
 I rarely if ever use ~Customize~ but when I do I prefer it to put its mess into its own tidy file.  Also here I'll load some secrets that I don't want in version control.
 #+begin_src emacs-lisp
   (setq custom-file "~/.emacs.d/custom.el")
-  (load custom-file)
+
+(when (file-exists-p custom-file)
+  (add-hook 'elpaca-after-init-hook (lambda () (load custom-file))))
 
   (when (file-exists-p (expand-file-name "secrets.el" user-emacs-directory))
     (load-file (expand-file-name "secrets.el" user-emacs-directory)))
@@ -179,10 +205,6 @@ We thank these themes for their prior service:
 
   (use-package nord-theme
     :if (display-graphic-p)
-    :straight (nord-theme
-	       :type git
-	       :host github
-	       :repo "nordtheme/emacs")
     :config
     (set-face-attribute 'default nil :family "Monaco")
     (set-face-attribute 'fixed-pitch nil :family "Monaco")
@@ -366,10 +388,6 @@ And the solution/workaround was:
     (setq-local ansi-color-for-comint-mode nil))
 
   (use-package xterm-color
-      :straight (xterm-color
-		 :type git
-		 :host github
-		 :repo "atomontage/xterm-color")
       :config
       (add-hook 'inferior-ess-mode-hook #'my-inferior-ess-init))
 
@@ -381,10 +399,7 @@ Most of these are simple invocations of ~use-package~ and require no explanation
 	(use-package web-mode)
 
 	(use-package glsl-mode
-	  :straight (glsl-mode
-		     :type git
-		     :host github
-		     :repo "jimhourihan/glsl-mode"))
+	  :ensure (:host github :repo "jimhourihan/glsl-mode"))
 
 	(use-package python)
 	(use-package lsp-python-ms
@@ -409,15 +424,19 @@ Some generally-useful stuff like Dashboard and packages like Org for writing pro
 Basically, the first time you run it, latex writes citations and stuff like ~\label~ to a ~.aux~ file, which is what bibtex reads.  BibTeX reads that file as well as the ~.bib~ file and uses that to format the references.  When you run LaTeX a second time it also reads both ~.aux~ and ~.tex~ files and if bibtex generated any ~.bbl~ files it reads those as well, which is how it inserts the references into the output.  The third run is what causes the citations and labels to get inserted into the output.  If you have multiple bibliographies you'll need more invocations of bibtex and latex and it quickly becomes a clusterfuck.  Anyways this is why I have three calls to ~pdflatex~ in there.
 
 #+begin_src emacs-lisp
-  (use-package dashboard
-    :config
-    (dashboard-setup-startup-hook)
-    (setq dashboard-items '((recents . 20) (bookmarks . 20)))
-    (setq dashboard-banner-logo-title "Hacks and glory await!")
-    (setq recentf-exclude '("bookmarks"))
-    (setq dashboard-startup-banner "~/.emacs.d/dashboard-logo.png"))
+(use-package dashboard
+  :config
+  (add-hook 'elpaca-after-init-hook #'dashboard-insert-startupify-lists)
+  (add-hook 'elpaca-after-init-hook #'dashboard-initialize)
+  (add-hook 'window-size-change-functions #'dashboard-resize-on-hook 100)
+  (add-hook 'window-setup-hook #'dashboard-resize-on-hook)
+  (setq dashboard-items '((recents . 20) (bookmarks . 20)))
+  (setq dashboard-banner-logo-title "Hacks and glory await!")
+  (setq recentf-exclude '("bookmarks"))
+  (setq dashboard-startup-banner (expand-file-name "dashboard-logo.png" user-emacs-directory)))
 
   (use-package org
+    :ensure nil
     :init
     (setf org-list-allow-alphabetical t)
     (setf org-src-tab-acts-natively t)
