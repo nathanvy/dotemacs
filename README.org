@@ -68,6 +68,8 @@ I rarely if ever use ~Customize~ but when I do I prefer it to put its mess into 
   (setq custom-file "~/.emacs.d/custom.el")
   (load custom-file)
 
+  (put 'upcase-region 'disabled nil)
+
   (when (file-exists-p (expand-file-name "secrets.el" user-emacs-directory))
     (load-file (expand-file-name "secrets.el" user-emacs-directory)))
 #+end_src
@@ -238,7 +240,7 @@ Emacs and LSP together make for a fantastic editing experience and has deprecate
 	   (js-ts-mode .lsp)
 	   (js-jsx-mode . lsp)
 	   (typescript-ts-mode . lsp)
-	   (c-or-c++-ts-mode . lsp)
+	   (c++-ts-mode . lsp)
 	   (python-ts-mode . (lambda ()
 			       (require 'lsp-python-ms)
 			       (lsp))))
@@ -326,7 +328,7 @@ I hated lisp at first but I've found that it's really grown on me.  It has its w
 #+begin_src emacs-lisp
   (use-package sly
     :config
-    (setq inferior-lisp-program "sbcl")
+    (setq inferior-lisp-program "sbcl --dynamic-space-size 2048")
     (setq org-babel-lisp-eval-fn #'sly-eval)
     (setq org-confirm-babel-evaluate nil))
 
@@ -424,8 +426,8 @@ Basically, the first time you run it, latex writes citations and stuff like ~\la
     (setf org-startup-truncated nil)
     :config
     (org-babel-do-load-languages 'org-babel-load-languages '((R . t)
-							     (lisp . t)
-							     (emacs-lisp . t)))
+        						     (lisp . t)
+        						     (emacs-lisp . t)))
     (set-face-attribute 'org-table nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-code nil :inherit 'fixed-pitch)
     (set-face-attribute 'org-block nil :inherit 'fixed-pitch)
@@ -445,15 +447,21 @@ Basically, the first time you run it, latex writes citations and stuff like ~\la
   (use-package org-bullets
     :init
     (add-hook 'org-mode-hook (lambda ()
-			       (org-bullets-mode 1))))
+        		       (org-bullets-mode 1))))
 
   (use-package ox-rfc)
+
+  (use-package tex
+    :straight (auctex
+               :type git
+               :host github
+               :repo "emacs-straight/auctex"))
 
   (use-package markdown-mode
     :commands (markdown-mode gfm-mode)
     :mode (("README\\.md\\'" . gfm-mode)
-	   ("\\.md\\'" . markdown-mode)
-	   ("\\.markdown\\'" . markdown-mode))
+           ("\\.md\\'" . markdown-mode)
+           ("\\.markdown\\'" . markdown-mode))
     :init (setq markdown-command "multimarkdown"))
 #+end_src
 
@@ -475,6 +483,7 @@ I put package-local/namespaced binds with their use-package declarations but I d
   (global-set-key (kbd "C-c d") 'lsp-find-definition)
   (global-set-key (kbd "C-c g") 'rgrep)
 
+  (global-set-key (kbd "C-c f") 'ff-find-other-file)
   (global-set-key (kbd "C-c i") 'flip-frame)
   (global-set-key (kbd "C-c o") 'flop-frame)
   (global-set-key (kbd "C-c r") 'rotate-frame-clockwise)
