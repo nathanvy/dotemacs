@@ -1,5 +1,5 @@
 default: README.org
-	@emacs -Q --batch -l 'lisp/compile-initfile.el'
+	@/Applications/Emacs.app/Contents/MacOS/Emacs -Q --batch -l 'lisp/compile-initfile.el'
 	mv README.el init.el
 
 clean:
