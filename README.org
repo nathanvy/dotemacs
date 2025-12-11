@@ -1,6 +1,6 @@
 #+STARTUP: showeverything
 #+STARTUP: inlineimages
-#+PROPERTY: header-args :tangle yes
+#+PROPERTY: header-args :tangle "init.el"
 # the above line causes all code blocks to be tangled unless you give it "tangle no" at the beginning
 
 * Emacs
@@ -478,16 +478,13 @@ Most of these are simple invocations of ~use-package~ and require no explanation
     :init
     (add-to-list 'auto-mode-alist '("\\.ipynb\\'" . ein:notebooklist-open))
     )
-  
+
   (defun lsp-go-install-save-hooks ()
     (add-hook 'before-save-hook #'lsp-format-buffer t t)
     (add-hook 'before-save-hook #'lsp-organize-imports t t))
   (use-package go-mode)
 
 #+end_src
-
-#+RESULTS:
-: [nil 26632 37308 118800 nil elpaca-process-queues nil nil 0 nil]
 
 Some generally-useful stuff like Dashboard and packages like Org for writing prose comes here.  If you read below and are confused, it's not a typo: ~pdflatex~ needs to be invoked three times because of the way the standard LaTeX recipe works, which goes something like this:
 
@@ -512,6 +509,7 @@ Basically, the first time you run it, latex writes citations and stuff like ~\la
     (setq dashboard-startup-banner (expand-file-name "~/.emacs.d/dashboard-logo.png" user-emacs-directory)))
 
   (use-package org
+    :ensure nil
     :init
     (setf org-list-allow-alphabetical t)
     (setf org-src-tab-acts-natively t)
