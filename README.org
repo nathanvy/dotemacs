@@ -17,11 +17,11 @@ This is a so-called "literate" code file, where the code and its documentation a
       --with-natural-title-bar --with-mac-metal --with-native-comp --with-emacs-sexy-icon
    #+end_src
 2. Once emacs is installed, issue the following commands:
-#+begin_src shell :tangle no
+   #+begin_src shell :tangle no
   $ git clone git@github.com:nathanvy/dotemacs.git
   $ cd .emacs.d/
   $ make
-#+end_src
+   #+end_src
 3.  Go make an espresso while ~elpaca~ bootstraps itself and begins pulling down packages.
 
 
@@ -29,22 +29,21 @@ This is a so-called "literate" code file, where the code and its documentation a
 First enable lexical binding, then set up [[https://github.com/progfolio/elpaca][elpaca]] which is a modern package manager that sidesteps the built-in ~package.el~ functionality, because [[https://lists.gnu.org/archive/html/emacs-devel/2023-05/msg00156.html][package.el is a dumpster fire]] and apparently not even the emacs maintainers know how it works.  Note that we use tree-sitter so technically we depend on emacs version 29+, but you could use the tree-sitter packages for prior versions.  In that case change/delete the check below.
 
 #+begin_src emacs-lisp
-    ;; -*- lexical-binding: t; -*-
+  ;; -*- lexical-binding: t; -*-
 
-    (when (version< emacs-version "29")
-      (error "This emacs requires a min version of 29 but you're running %s" emacs-version))
+  (when (version< emacs-version "29")
+    (error "This emacs requires a min version of 29 but you're running %s" emacs-version))
 
-    (setq user-full-name "Nathan Van Ymeren"
-          user-mail-address "n@0x85.org")
+  (setq user-full-name "Nathan Van Ymeren"
+        user-mail-address "n@0x85.org")
 
-    (setq use-short-answers t)
-    (tool-bar-mode -1)
-
-    (set-default-coding-systems 'utf-8)  
-    (prefer-coding-system       'utf-8)  
-    (set-terminal-coding-system 'utf-8)  
-    (set-keyboard-coding-system 'utf-8)  
-    (set-language-environment "English") 
+  (setq use-short-answers t)
+  
+  (set-default-coding-systems 'utf-8)  
+  (prefer-coding-system       'utf-8)  
+  (set-terminal-coding-system 'utf-8)  
+  (set-keyboard-coding-system 'utf-8)  
+  (set-language-environment "English") 
 #+end_src
 
 Now because I'm running a fork, it sometimes doesn't play nicely with packages that aren't expecting a development version to be running.  For example I get warnings elpaca about stale versions, so this is to suppress those:
@@ -56,49 +55,49 @@ Now because I'm running a fork, it sometimes doesn't play nicely with packages t
 
 This is the elpaca installer:
 #+begin_src emacs-lisp
-    (defvar elpaca-installer-version 0.11)
-    (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
-    (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-    (defvar elpaca-repos-directory (expand-file-name "repos/" elpaca-directory))
-    (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                                  :ref nil :depth 1 :inherit ignore
-                                  :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                                  :build (:not elpaca--activate-package)))
-    (let* ((repo  (expand-file-name "elpaca/" elpaca-repos-directory))
-           (build (expand-file-name "elpaca/" elpaca-builds-directory))
-           (order (cdr elpaca-order))
-           (default-directory repo))
-      (add-to-list 'load-path (if (file-exists-p build) build repo))
-      (unless (file-exists-p repo)
-        (make-directory repo t)
-        (when (<= emacs-major-version 28) (require 'subr-x))
-        (condition-case-unless-debug err
-            (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                      ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-                                                      ,@(when-let* ((depth (plist-get order :depth)))
-                                                          (list (format "--depth=%d" depth) "--no-single-branch"))
-                                                      ,(plist-get order :repo) ,repo))))
-                      ((zerop (call-process "git" nil buffer t "checkout"
-                                            (or (plist-get order :ref) "--"))))
-                      (emacs (concat invocation-directory invocation-name))
-                      ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-                                            "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-                      ((require 'elpaca))
-                      ((elpaca-generate-autoloads "elpaca" repo)))
-                (progn (message "%s" (buffer-string)) (kill-buffer buffer))
-              (error "%s" (with-current-buffer buffer (buffer-string))))
-          ((error) (warn "%s" err) (delete-directory repo 'recursive))))
-      (unless (require 'elpaca-autoloads nil t)
-        (require 'elpaca)
-        (elpaca-generate-autoloads "elpaca" repo)
-        (load "./elpaca-autoloads")))
-    (add-hook 'after-init-hook #'elpaca-process-queues)
-    (elpaca `(,@elpaca-order))
+  (defvar elpaca-installer-version 0.12)
+(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+(defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
+(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                              :ref nil :depth 1 :inherit ignore
+                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                              :build (:not elpaca-activate)))
+(let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
+       (build (expand-file-name "elpaca/" elpaca-builds-directory))
+       (order (cdr elpaca-order))
+       (default-directory repo))
+  (add-to-list 'load-path (if (file-exists-p build) build repo))
+  (unless (file-exists-p repo)
+    (make-directory repo t)
+    (when (<= emacs-major-version 28) (require 'subr-x))
+    (condition-case-unless-debug err
+        (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                  ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                  ,@(when-let* ((depth (plist-get order :depth)))
+                                                      (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                  ,(plist-get order :repo) ,repo))))
+                  ((zerop (call-process "git" nil buffer t "checkout"
+                                        (or (plist-get order :ref) "--"))))
+                  (emacs (concat invocation-directory invocation-name))
+                  ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                        "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                  ((require 'elpaca))
+                  ((elpaca-generate-autoloads "elpaca" repo)))
+            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+          (error "%s" (with-current-buffer buffer (buffer-string))))
+      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+  (unless (require 'elpaca-autoloads nil t)
+    (require 'elpaca)
+    (elpaca-generate-autoloads "elpaca" repo)
+    (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+(add-hook 'after-init-hook #'elpaca-process-queues)
+(elpaca `(,@elpaca-order))
 
-    (elpaca elpaca-use-package
-      ;; Enable use-package :ensure support for Elpaca.
-      (elpaca-use-package-mode)
-      (setq use-package-always-ensure t))
+  (elpaca elpaca-use-package
+    ;; Enable use-package :ensure support for Elpaca.
+    (elpaca-use-package-mode)
+    (setq use-package-always-ensure t))
   #+end_src
 
 I rarely if ever use ~Customize~ but when I do I prefer it to put its mess into its own tidy file.  Also here I'll load some secrets that I don't want in version control.
@@ -137,6 +136,8 @@ This sets up a centralized location where emacs will leave its temporary files i
 ** Utilities
 Some utility functions:
 #+begin_src emacs-lisp
+  (use-package crux)
+
   (defun increment-number-at-point ()
     (interactive)
     (skip-chars-backward "0-9")
@@ -179,25 +180,13 @@ Now that we're bootstrapped we can start pulling in stuff that we use to get oth
 
 #+end_src
 
-Because the emacs ecosystem is rather eclectic (derogatory), sometimes packages don't load properly unless you use the clunky ~package.el~ infrastructure.  One example of this is ~seq~.  For reasons I have not had time or energy to explore, ~seq~ just doesn't get updated from 2.23 to 2.24+ if you install a recent ~magit~.  Maybe this is an elpaca problem, or maybe this is an emacs package ecosystem versioning problem, but either way I had to jump through these hoops to get magit to install properly via elpaca.  Similarly, ~transient~ (which is what makes the fancy "menus" in magit, isn't getting updated upon installing magit, which of course relies on transient pretty fucking heavily, and so unless you include the following, you have to deal with undefined symbols.  Anyways apparently we need to manually specify certain dependencies to get things going at the time of this writing.
+Because the emacs ecosystem is rather eclectic (derogatory), sometimes packages don't load properly unless you use the clunky ~package.el~ infrastructure.  One example of this is ~transient~ (which is what makes the fancy "menus" in magit), isn't getting updated upon installing magit, which of course relies on transient pretty fucking heavily, and so unless you include the following, you have to deal with undefined symbols, or build failures, etc.  Sometime between 2024 and 2025, I stopped needing to manually specify ~seq~, which is a win.  Anyways apparently we need to manually specify certain dependencies to get things going at the time of this writing.
 
 Interestingly enough ~straight.el~ didn't require this much hand-holding, but it's /significantly/ slower so I don't mind.
 
 #+begin_src emacs-lisp
-  (defun +elpaca-unload-seq (e)
-  (and (featurep 'seq) (unload-feature 'seq t))
-  (elpaca--continue-build e))
-
-
-  (defun +elpaca-seq-build-steps ()
-    (append (butlast (if (file-exists-p (expand-file-name "seq" elpaca-builds-directory))
-                         elpaca--pre-built-steps elpaca-build-steps))
-            (list '+elpaca-unload-seq 'elpaca--activate-package)))
-
-  (use-package seq :ensure `(seq :build ,(+elpaca-seq-build-steps)))
   (use-package transient)
   (use-package magit)
-
 #+end_src
 
 And some general utility packages.  Transpose-frame lets us move frames around easily, and smex aka Smart M-x is just groovy.
@@ -206,9 +195,7 @@ And some general utility packages.  Transpose-frame lets us move frames around e
   (use-package transpose-frame)
   (use-package smex)
   (use-package projectile)
-  (use-package which-key
-    :config
-    (which-key-mode))
+  (which-key-mode 1)
   #+end_src
 
 There are lots of competing (or perhaps it would be better to say /overlapping/) packages in this space but I like good old ~ido~.  It does what I need.  ~ido~ is built in but if you actually set `ido-everywhere = 1` you may discover it's not actually /everywhere/ so we add ~ido-completing-read+~
@@ -282,55 +269,188 @@ Parrot Mode needs no introduction, and no explanation.
     :config (parrot-mode))
 #+end_src
 
+*** Snippets
+In 2021 I started writing a lot of Go (golang) and there's an awful lot of repetitive error checking when trying to follow the idiomatic style.  I got annoyed at writing the same if construct hundreds of times so I decided it was finally time to install yasnippet.  It comes with ~TAB~ bound to ~yas-expand~ by default which I don't like, so I disabled it here by setting it to nil, and moved it to a different key combination at the end of this file.
+
+#+begin_src emacs-lisp
+  (use-package yasnippet
+    :init
+    (yas-global-mode)
+    (define-key yas-minor-mode-map (kbd "<tab>") nil)
+    (define-key yas-minor-mode-map (kbd "TAB") nil))
+
+#+end_src
+
+*** Lisp
+I hated lisp at first but I've found that it's really grown on me.  It has its warts but all languages do.  We don't leverage LSP here since most lisp implementations predate Language Servers and provide their own analogous constructs that are more tightly integrated with the REPL anyway.  Sly is a fork of SLIME and is more actively developed.
+
+#+begin_src emacs-lisp
+  (use-package sly
+    :config
+    (setq inferior-lisp-program "sbcl --dynamic-space-size 2048")
+    (setq org-babel-lisp-eval-fn #'sly-eval)
+    (setq org-confirm-babel-evaluate nil))
+
+  (use-package paredit
+    :mode "paredit-mode"
+    :commands enable-paredit-mode
+    :init
+    (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
+    (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
+    (add-hook 'ielm-mode-hook #'enable-paredit-mode)
+    (add-hook 'lisp-mode-hook #'enable-paredit-mode)
+    (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
+    (add-hook 'scheme-mode-hook #'enable-paredit-mode)
+    :bind (:map paredit-mode-map
+                ("<return>" . my/paredit-RET))
+    :config
+    (defun my/paredit-RET ()
+      "Wraps `paredit-RET' to provide a sane minibuffer behavior"
+      (interactive)
+      (if (minibufferp)
+          (read--expression-try-read)
+        (paredit-RET))))
+#+end_src
+
+*** R
+At the time of writing this paragraph I'm in an MBA program and for our analytics courses they inexplicably chose R over Python, because I guess they hate us.  So here's ~ess~ (Emacs Speaks Statistics).  I haven't bothered to set up ~polymode~ for doing "RMarkdown" shenanigans because org is good enough for me.
+
+#+begin_src emacs-lisp
+      (use-package ess
+	:bind (:map ess-r-mode-map
+		    ("M-p" . " %>%"))
+	:config
+	(require 'ess-r-mode))
+#+end_src
+
+In the course of writing assignments I ran into a problem where certain tidyverse packages were causing weird coloration in the inferior ESS R buffer, such that the text was basically unreadable on a dark background.  After some digging it seems that the R process emits super leet haxors ANSI color codes, because you know why not?
+
+The issue is this one:  https://github.com/emacs-ess/ESS/issues/1193
+
+And the solution/workaround was:
+#+begin_src emacs-lisp
+
+  (defun my-inferior-ess-init ()
+    "Workaround for https://github.com/emacs-ess/ESS/issues/1193"
+    (add-hook 'comint-preoutput-filter-functions #'xterm-color-filter -90 t)
+    (setq-local ansi-color-for-comint-mode nil))
+
+  (use-package xterm-color
+      :ensure (:host github :repo "atomontage/xterm-color")
+      :config
+      (add-hook 'inferior-ess-mode-hook #'my-inferior-ess-init))
+
+#+end_src
+
+*** Other programming languages
+Most of these are simple invocations of ~use-package~ and require no explanation.
+#+begin_src emacs-lisp
+  (use-package php-mode
+    :ensure (:host github :repo "emacs-php/php-mode"))
+
+  (use-package php-ts-mode
+    :ensure (:host github :repo "emacs-php/php-ts-mode"))
+
+  (use-package web-mode)
+
+  (use-package cmake-mode)
+
+  (use-package terraform-mode
+    :ensure t)
+
+  (use-package csproj-mode
+    :ensure (:host github :repo "omajid/csproj-mode"))
+
+  (use-package glsl-mode
+    :ensure (:host github :repo "jimhourihan/glsl-mode"))
+
+  (use-package lsp-python-ms
+    :after (lsp-mode python)
+    :init (setq lsp-python-ms-auto-install-server t))
+
+  (use-package ein
+    :ensure t
+    :init
+    (add-to-list 'auto-mode-alist '("\\.ipynb\\'" . ein:notebooklist-open))
+    )
+
+  (defun lsp-go-install-save-hooks ()
+    (add-hook 'before-save-hook #'lsp-format-buffer t t)
+    (add-hook 'before-save-hook #'lsp-organize-imports t t))
+
+  (use-package swift-mode
+    :hook (swift-mode . (lambda () (lsp))))
+
+  (use-package lsp-sourcekit
+    :after lsp-mode
+    :config
+    (setq lsp-sourcekit-executable (string-trim (shell-command-to-string "xcrun --find sourcekit-lsp"))))
+
+
+#+end_src
+
 *** Language Server Protocol
 Emacs and LSP together make for a fantastic editing experience and has deprecated a lot of [[https://0x85.org/csharp-emacs.html][previously-indispensable stuff]] so we'll get it going along with company for completion.  For pre-29 emacs this is where I also ~use-package~'d the tree-sitter packages and languages but with the release of 29.1 that's no longer necessary as long as you compile emacs ~--with-tree-sitter~
 
 I develop C++ on a mac, so I've also got a ~setq~ in here to make sure ~clangd~ uses the homebrew version of LLVM rather than the one Apple ships by default, which tends to lag behind support for modern C++20 and whatnot.
 
 #+begin_src emacs-lisp
-  (use-package lsp-mode
-    :init
-    ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
-    (setf lsp-keymap-prefix "C-c l")
-    :hook ((go-ts-mode . (lambda ()
-        		   (lsp-go-install-save-hooks)
-        		   (lsp)))
-           (csharp-ts-mode . lsp)
-           (ruby-base-mode . lsp)
-           (ess-r-mode . lsp)
-           (web-mode . lsp)
-           (js-ts-mode .lsp)
-           (js-jsx-mode . lsp)
-           (typescript-ts-mode . lsp)
-           (c++-ts-mode . lsp)
-           (c++-mode . lsp)
-           (php-ts-mode . lsp)
-           (python-ts-mode . (lambda ()
-        		       (require 'lsp-python-ms)
-        		       (lsp))))
-    :commands lsp lsp-deferred
-    :config
-    (setq lsp-disabled-clients
-          '((ruby-mode . (rubocop-ls)) (ruby-ts-mode . (rubocop-ls))))
-    (setq lsp-log-io nil)
-    (setq lsp-clients-clangd-executable "/opt/homebrew/opt/llvm/bin/clangd")
-    (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\.staging\\'"))
 
-  (use-package lsp-ui
-    :hook (lsp-mode . lsp-ui-mode))
+  ;; Prefer tree-sitter major modes for modern JS/TS/TSX/JSX.
+  (add-to-list 'auto-mode-alist '("\\.ts\\'"  . typescript-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.mts\\'" . typescript-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.cts\\'" . typescript-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.tsx\\'" . tsx-ts-mode))
 
-  (use-package flycheck
-    :init (global-flycheck-mode))
+  (add-to-list 'auto-mode-alist '("\\.js\\'"  . js-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.mjs\\'" . js-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.cjs\\'" . js-ts-mode))
+  (add-to-list 'auto-mode-alist '("\\.jsx\\'" . tsx-ts-mode))
 
-  (use-package lsp-treemacs
-    :commands lsp-treemacs-errors-list)
+    (use-package lsp-mode
+      :init
+      ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
+      (setf lsp-keymap-prefix "C-c l")
+      :hook ((go-ts-mode . (lambda ()
+          		   (lsp-go-install-save-hooks)
+          		   (lsp-deferred)))
+             (csharp-ts-mode . lsp-deferred)
+             (ruby-base-mode . lsp-deferred)
+             (ess-r-mode . lsp-deferred)
+             (js-ts-mode . lsp-deferred)
+             (tsx-ts-mode . lsp-deferred)
+             (c++-ts-mode . lsp-deferred)
+             (typescript-ts-mode . lsp-deferred)
+             (c++-mode . lsp-deferred)
+             (php-ts-mode . lsp-deferred)
+             (python-ts-mode . (lambda ()
+          		       (require 'lsp-python-ms)
+          		       (lsp-deferred))))
+      :commands lsp lsp-deferred
+      :config
+      (setq lsp-disabled-clients
+            '((ruby-mode . (rubocop-ls)) (ruby-ts-mode . (rubocop-ls))))
+      (setq lsp-log-io nil)
+      (setq lsp-enable-file-watchers nil)
+      (setq lsp-keep-workspace-alive nil)
+      (setq lsp-clients-clangd-executable "/opt/homebrew/opt/llvm/bin/clangd")
+      (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\.staging\\'"))
 
-  (use-package company
-    :hook
-    (prog-mode . company-mode)
-    (tex-mode . company-mode)
-    (special-mode . company-mode)
-    (comint-mode . company-mode))
+    (use-package lsp-ui
+      :hook (lsp-mode . lsp-ui-mode))
+
+    (use-package flycheck
+      :init (global-flycheck-mode))
+
+    (use-package lsp-treemacs
+      :commands lsp-treemacs-errors-list)
+
+    (use-package company
+      :hook
+      (prog-mode . company-mode)
+      (tex-mode . company-mode)
+      (special-mode . company-mode)
+      (comint-mode . company-mode))
 
   #+end_src
 
@@ -383,109 +503,6 @@ Tree-sitter is awesome and much faster than regexps, but we don't want to manual
 	(global-treesit-auto-mode))
 #+end_src
 
-*** Snippets
-In 2021 I started writing a lot of Go (golang) and there's an awful lot of repetitive error checking when trying to follow the idiomatic style.  I got annoyed at writing the same if construct hundreds of times so I decided it was finally time to install yasnippet.  It comes with ~TAB~ bound to ~yas-expand~ by default which I don't like, so I disabled it here by setting it to nil, and moved it to a different key combination at the end of this file.
-
-#+begin_src emacs-lisp
-  (use-package yasnippet
-    :init
-    (yas-global-mode)
-    (define-key yas-minor-mode-map (kbd "<tab>") nil)
-    (define-key yas-minor-mode-map (kbd "TAB") nil))
-
-#+end_src
-
-*** Lisp
-I hated lisp at first but I've found that it's really grown on me.  It has its warts but all languages do.  We don't leverage LSP here since most lisp implementations predate Language Servers and provide their own analogous constructs that are more tightly integrated with the REPL anyway.  Sly is a fork of SLIME and is more actively developed.
-
-#+begin_src emacs-lisp
-  (use-package sly
-    :config
-    (setq inferior-lisp-program "sbcl --dynamic-space-size 2048")
-    (setq org-babel-lisp-eval-fn #'sly-eval)
-    (setq org-confirm-babel-evaluate nil))
-
-  (use-package paredit
-    :mode "paredit-mode"
-    :commands enable-paredit-mode
-    :init
-    (add-hook 'emacs-lisp-mode-hook #'enable-paredit-mode)
-    (add-hook 'eval-expression-minibuffer-setup-hook #'enable-paredit-mode)
-    (add-hook 'ielm-mode-hook #'enable-paredit-mode)
-    (add-hook 'lisp-mode-hook #'enable-paredit-mode)
-    (add-hook 'lisp-interaction-mode-hook #'enable-paredit-mode)
-    (add-hook 'scheme-mode-hook #'enable-paredit-mode))
-#+end_src
-
-*** R
-At the time of writing this paragraph I'm in an MBA program and for our analytics courses they inexplicably chose R over Python, because I guess they hate us.  So here's ~ess~ (Emacs Speaks Statistics).  I haven't bothered to set up ~polymode~ for doing "RMarkdown" shenanigans because org is good enough for me.
-
-#+begin_src emacs-lisp
-      (use-package ess
-	:bind (:map ess-r-mode-map
-		    ("M-p" . " %>%"))
-	:config
-	(require 'ess-r-mode))
-#+end_src
-
-In the course of writing assignments I ran into a problem where certain tidyverse packages were causing weird coloration in the inferior ESS R buffer, such that the text was basically unreadable on a dark background.  After some digging it seems that the R process emits super leet haxors ANSI color codes, because you know why not?
-
-The issue is this one:  https://github.com/emacs-ess/ESS/issues/1193
-
-And the solution/workaround was:
-#+begin_src emacs-lisp
-
-  (defun my-inferior-ess-init ()
-    "Workaround for https://github.com/emacs-ess/ESS/issues/1193"
-    (add-hook 'comint-preoutput-filter-functions #'xterm-color-filter -90 t)
-    (setq-local ansi-color-for-comint-mode nil))
-
-  (use-package xterm-color
-      :ensure (:host github :repo "atomontage/xterm-color")
-      :config
-      (add-hook 'inferior-ess-mode-hook #'my-inferior-ess-init))
-
-#+end_src
-
-*** Other programming languages
-Most of these are simple invocations of ~use-package~ and require no explanation.
-#+begin_src emacs-lisp
-  (use-package php-mode
-    :ensure (:host github :repo "emacs-php/php-mode"))
-
-  (use-package php-ts-mode
-    :ensure (:host github :repo "emacs-php/php-ts-mode"))
-
-  (use-package yaml-mode
-    :mode "\\.yml\\'"
-    :ensure (:host github :repo "yoshiki/yaml-mode"))
-
-  (use-package web-mode)
-
-  (use-package terraform-mode
-    :ensure t)
-
-  (use-package glsl-mode
-    :ensure (:host github :repo "jimhourihan/glsl-mode"))
-
-  (use-package python)
-  (use-package lsp-python-ms
-    :after (lsp-mode python)
-    :init (setq lsp-python-ms-auto-install-server t))
-
-  (use-package ein
-    :ensure t
-    :init
-    (add-to-list 'auto-mode-alist '("\\.ipynb\\'" . ein:notebooklist-open))
-    )
-
-  (defun lsp-go-install-save-hooks ()
-    (add-hook 'before-save-hook #'lsp-format-buffer t t)
-    (add-hook 'before-save-hook #'lsp-organize-imports t t))
-  (use-package go-mode)
-
-#+end_src
-
 Some generally-useful stuff like Dashboard and packages like Org for writing prose comes here.  If you read below and are confused, it's not a typo: ~pdflatex~ needs to be invoked three times because of the way the standard LaTeX recipe works, which goes something like this:
 
 1. ~$ latex <filename>~
@@ -535,10 +552,9 @@ Basically, the first time you run it, latex writes citations and stuff like ~\la
       "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f"
       "pdflatex -shell-escape -interaction nonstopmode -output-directory %o %f")))
 
-  (use-package org-bullets
+  (use-package org-modern
     :init
-    (add-hook 'org-mode-hook (lambda ()
-        		       (org-bullets-mode 1))))
+    (add-hook 'org-mode-hook #'org-modern-mode))
 
   (use-package ox-rfc)
 
@@ -599,12 +615,20 @@ I put package-local/namespaced binds with their use-package declarations but I d
   (global-unset-key (kbd "M-t"))
   (global-unset-key (kbd "C-t"))
 
-  (global-unset-key (kbd "<C-wheel-up>"))
-  (global-unset-key (kbd "<C-wheel-down>"))
+  (global-unset-key (kbd "C-<wheel-up>"))
+  (global-unset-key (kbd "C-<wheel-down>"))
 #+end_src
 
 
 ** Stuff I'm trialling:
 - https://github.com/emacsmirror/gcmh
+
+#+begin_src emacs-lisp
+  (use-package gcmh
+    :config
+    (setq gcmh-high-cons-threshold (* 256 1024 1024)) ; 256MB for LSP work
+    (gcmh-mode 1))
+
+#+end_src
 - https://github.com/minad/marginalia
   
