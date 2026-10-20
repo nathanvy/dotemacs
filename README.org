@@ -55,49 +55,52 @@ Now because I'm running a fork, it sometimes doesn't play nicely with packages t
 
 This is the elpaca installer:
 #+begin_src emacs-lisp
-  (defvar elpaca-installer-version 0.12)
-(defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
-(defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
-(defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
-(defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
-                              :ref nil :depth 1 :inherit ignore
-                              :files (:defaults "elpaca-test.el" (:exclude "extensions"))
-                              :build (:not elpaca-activate)))
-(let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
-       (build (expand-file-name "elpaca/" elpaca-builds-directory))
-       (order (cdr elpaca-order))
-       (default-directory repo))
-  (add-to-list 'load-path (if (file-exists-p build) build repo))
-  (unless (file-exists-p repo)
-    (make-directory repo t)
-    (when (<= emacs-major-version 28) (require 'subr-x))
-    (condition-case-unless-debug err
-        (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
-                  ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
-                                                  ,@(when-let* ((depth (plist-get order :depth)))
-                                                      (list (format "--depth=%d" depth) "--no-single-branch"))
-                                                  ,(plist-get order :repo) ,repo))))
-                  ((zerop (call-process "git" nil buffer t "checkout"
-                                        (or (plist-get order :ref) "--"))))
-                  (emacs (concat invocation-directory invocation-name))
-                  ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
-                                        "--eval" "(byte-recompile-directory \".\" 0 'force)")))
-                  ((require 'elpaca))
-                  ((elpaca-generate-autoloads "elpaca" repo)))
-            (progn (message "%s" (buffer-string)) (kill-buffer buffer))
-          (error "%s" (with-current-buffer buffer (buffer-string))))
-      ((error) (warn "%s" err) (delete-directory repo 'recursive))))
-  (unless (require 'elpaca-autoloads nil t)
-    (require 'elpaca)
-    (elpaca-generate-autoloads "elpaca" repo)
-    (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
-(add-hook 'after-init-hook #'elpaca-process-queues)
-(elpaca `(,@elpaca-order))
+    (defvar elpaca-installer-version 0.12)
+  (defvar elpaca-directory (expand-file-name "elpaca/" user-emacs-directory))
+  (defvar elpaca-builds-directory (expand-file-name "builds/" elpaca-directory))
+  (defvar elpaca-sources-directory (expand-file-name "sources/" elpaca-directory))
+  (defvar elpaca-order '(elpaca :repo "https://github.com/progfolio/elpaca.git"
+                                :ref nil :depth 1 :inherit ignore
+                                :files (:defaults "elpaca-test.el" (:exclude "extensions"))
+                                :build (:not elpaca-activate)))
+  (let* ((repo  (expand-file-name "elpaca/" elpaca-sources-directory))
+         (build (expand-file-name "elpaca/" elpaca-builds-directory))
+         (order (cdr elpaca-order))
+         (default-directory repo))
+    (add-to-list 'load-path (if (file-exists-p build) build repo))
+    (unless (file-exists-p repo)
+      (make-directory repo t)
+      (when (<= emacs-major-version 28) (require 'subr-x))
+      (condition-case-unless-debug err
+          (if-let* ((buffer (pop-to-buffer-same-window "*elpaca-bootstrap*"))
+                    ((zerop (apply #'call-process `("git" nil ,buffer t "clone"
+                                                    ,@(when-let* ((depth (plist-get order :depth)))
+                                                        (list (format "--depth=%d" depth) "--no-single-branch"))
+                                                    ,(plist-get order :repo) ,repo))))
+                    ((zerop (call-process "git" nil buffer t "checkout"
+                                          (or (plist-get order :ref) "--"))))
+                    (emacs (concat invocation-directory invocation-name))
+                    ((zerop (call-process emacs nil buffer nil "-Q" "-L" "." "--batch"
+                                          "--eval" "(byte-recompile-directory \".\" 0 'force)")))
+                    ((require 'elpaca))
+                    ((elpaca-generate-autoloads "elpaca" repo)))
+              (progn (message "%s" (buffer-string)) (kill-buffer buffer))
+            (error "%s" (with-current-buffer buffer (buffer-string))))
+        ((error) (warn "%s" err) (delete-directory repo 'recursive))))
+    (unless (require 'elpaca-autoloads nil t)
+      (require 'elpaca)
+      (elpaca-generate-autoloads "elpaca" repo)
+      (let ((load-source-file-function nil)) (load "./elpaca-autoloads"))))
+  (add-hook 'after-init-hook #'elpaca-process-queues)
+  (elpaca `(,@elpaca-order))
 
-  (elpaca elpaca-use-package
-    ;; Enable use-package :ensure support for Elpaca.
-    (elpaca-use-package-mode)
-    (setq use-package-always-ensure t))
+    (elpaca elpaca-use-package
+      ;; Enable use-package :ensure support for Elpaca.
+      (elpaca-use-package-mode)
+      (setq use-package-always-ensure t))
+
+  ;; Apparently this is required by the built-in python mode:
+  (elpaca (compat :wait t))
   #+end_src
 
 I rarely if ever use ~Customize~ but when I do I prefer it to put its mess into its own tidy file.  Also here I'll load some secrets that I don't want in version control.
@@ -243,7 +246,7 @@ We thank these themes for their prior service:
   (use-package mode-line-bell
     :config (mode-line-bell-mode))
 
-  
+
   ;; (use-package prism
   ;;     :commands prism-mode
   ;;     :init
@@ -351,7 +354,15 @@ Most of these are simple invocations of ~use-package~ and require no explanation
   (use-package php-ts-mode
     :ensure (:host github :repo "emacs-php/php-ts-mode"))
 
-  (use-package web-mode)
+  ;; Plain `html-mode' is fine for markup-only documents, but `web-mode'
+  ;; understands the HTML, CSS, and JavaScript in a single-file application.
+  (use-package web-mode
+    :mode ("\\.html?\\'" . web-mode)
+    :init
+    (setq web-mode-markup-indent-offset 2
+          web-mode-css-indent-offset 2
+          web-mode-code-indent-offset 2
+          web-mode-enable-css-colorization t))
 
   (use-package cmake-mode)
 
@@ -380,6 +391,17 @@ Most of these are simple invocations of ~use-package~ and require no explanation
 
   (use-package swift-mode
     :hook (swift-mode . (lambda () (lsp))))
+
+  (use-package yaml-ts-mode
+    :ensure nil ; Built-in package
+    :mode ("\\.ya?ml\\'" . yaml-ts-mode)
+    :config
+    ;; Customize indentation depth if necessary (default is usually 2)
+    (setq yaml-ts-mode-indent-offset 2))
+
+  (use-package rust-ts-mode
+    :ensure nil ;builtin
+    :mode ("\\.rs\\'" . rust-ts-mode))
 
   (use-package lsp-sourcekit
     :after lsp-mode
@@ -411,12 +433,15 @@ I develop C++ on a mac, so I've also got a ~setq~ in here to make sure ~clangd~ 
       :init
       ;; set prefix for lsp-command-keymap (few alternatives - "C-l", "C-c l")
       (setf lsp-keymap-prefix "C-c l")
+      (setq lsp-rust-server 'rust-analyzer)
       :hook ((go-ts-mode . (lambda ()
           		   (lsp-go-install-save-hooks)
           		   (lsp-deferred)))
+             (rust-ts-mode . lsp-deferred)
              (csharp-ts-mode . lsp-deferred)
              (ruby-base-mode . lsp-deferred)
              (ess-r-mode . lsp-deferred)
+             (web-mode . lsp-deferred)
              (js-ts-mode . lsp-deferred)
              (tsx-ts-mode . lsp-deferred)
              (c++-ts-mode . lsp-deferred)
@@ -433,6 +458,9 @@ I develop C++ on a mac, so I've also got a ~setq~ in here to make sure ~clangd~ 
       (setq lsp-log-io nil)
       (setq lsp-enable-file-watchers nil)
       (setq lsp-keep-workspace-alive nil)
+      ;; `web-mode' can represent several languages; HTML filenames should use
+      ;; vscode-html-language-server, including its embedded CSS/JS support.
+      (add-to-list 'lsp-language-id-configuration '("\\.html?\\'" . "html"))
       (setq lsp-clients-clangd-executable "/opt/homebrew/opt/llvm/bin/clangd")
       (add-to-list 'lsp-file-watch-ignored-directories "[/\\\\]\\.staging\\'"))
 
@@ -490,7 +518,7 @@ I develop C++ on a mac, so I've also got a ~setq~ in here to make sure ~clangd~ 
        (toml "https://github.com/tree-sitter/tree-sitter-toml")
        (tsx "https://github.com/tree-sitter/tree-sitter-typescript" "master" "tsx/src")
        (typescript "https://github.com/tree-sitter/tree-sitter-typescript" "master" "typescript/src")
-       (yaml "https://github.com/ikatyang/tree-sitter-yaml")))
+       (yaml "https://github.com/tree-sitter-grammars/tree-sitter-yaml")))
 #+end_src
 
 Tree-sitter is awesome and much faster than regexps, but we don't want to manually deal with enabling the ~<name>-ts-mode~ and wondering which are available so we'll just use ~treesit-auto~:
@@ -515,6 +543,9 @@ Basically, the first time you run it, latex writes citations and stuff like ~\la
 
 #+begin_src emacs-lisp
   (use-package dashboard
+    :hook (dashboard-mode . (lambda ()
+                              ;; Elpaca's startup hooks can run in a package build directory.
+                              (setq-local default-directory (expand-file-name "~/"))))
     :config
     (add-hook 'elpaca-after-init-hook #'dashboard-insert-startupify-lists)
     (add-hook 'elpaca-after-init-hook #'dashboard-initialize)
@@ -556,10 +587,12 @@ Basically, the first time you run it, latex writes citations and stuff like ~\la
     :init
     (add-hook 'org-mode-hook #'org-modern-mode))
 
-  (use-package ox-rfc)
+  (use-package rfc-mode
+    :ensure (:host github :repo "galdor/rfc-mode"))
 
   (use-package tex
-    :ensure (:host github :repo "emacs-straight/auctex"))
+    :ensure (:host github :repo "emacs-straight/auctex")
+    :config (setq-default TeX-engine 'luatex))
 
   (use-package markdown-mode
     :commands (markdown-mode gfm-mode)
